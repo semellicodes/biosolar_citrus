@@ -1,0 +1,16 @@
+name: compartilhado
+description: Contratos e entidades compartilhados entre o servidor e o aplicativo.
+version: 1.0.0
+publish_to: 'none'
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.12.2
+
+# Add regular dependencies here.
+dependencies:
+  # path: ^1.9.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6

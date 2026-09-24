@@ -1,0 +1,17 @@
+name: servidor
+description: Servidor de simulacao e regras de automacao do BioSolar Citrus.
+version: 1.0.0
+publish_to: 'none'
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.12.2
+
+# Add regular dependencies here.
+dependencies:
+  compartilhado:
+    path: ../compartilhado
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
