@@ -5,8 +5,10 @@
 library;
 
 import 'package:compartilhado/modelos.dart';
+import 'package:shelf/shelf_io.dart' as io;
 import 'package:servidor/aplicacao/servico_simulacao.dart';
 import 'package:servidor/infraestrutura/repositorio_memoria.dart';
+import 'package:servidor/infraestrutura/rotas_http.dart';
 
 const _cores = {
   Faixa.verde: '\x1b[32m',
@@ -20,7 +22,7 @@ String _hora(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:'
     '${d.minute.toString().padLeft(2, '0')}:'
     '${d.second.toString().padLeft(2, '0')}';
 
-void main(List<String> argumentos) {
+Future<void> main(List<String> argumentos) async {
   final repositorio = RepositorioMemoria();
   final simulacao = ServicoSimulacao(repositorio);
 
@@ -45,6 +47,9 @@ void main(List<String> argumentos) {
   } else {
     simulacao.iniciar();
   }
-  print('Simulacao iniciada, ciclo a cada ${simulacao.intervalo.inMilliseconds} ms. '
+  final servidor = await io.serve(
+      criarRotas(simulacao, repositorio), '0.0.0.0', 8080);
+  print('Servidor em http://${servidor.address.host}:${servidor.port}, '
+      'ciclo a cada ${simulacao.intervalo.inMilliseconds} ms. '
       'Ctrl+C para encerrar.');
 }
