@@ -153,6 +153,10 @@ class _TelaMonitoramentoState extends State<TelaMonitoramento> {
                   titulo: 'Reservatorio',
                   valor: telemetria.reservatorio.nivel,
                   faixa: telemetria.reservatorio.faixa,
+                  // RN03: a captacao solar e o que repoe o reservatorio, e e
+                  // ela que permite a liberacao do bloqueio.
+                  rodape: '${telemetria.horaSimulada.floor()}h  -  captacao '
+                      'solar ${(telemetria.fatorSolarAtual * 100).round()}%',
                 ),
                 const SizedBox(height: 8),
                 for (final talhao in telemetria.talhoes)
@@ -211,20 +215,36 @@ class _Aviso extends StatelessWidget {
 
 class _Indicador extends StatelessWidget {
   const _Indicador(
-      {required this.titulo, required this.valor, required this.faixa});
+      {required this.titulo,
+      required this.valor,
+      required this.faixa,
+      this.rodape});
 
   final String titulo;
   final double valor;
   final Faixa faixa;
+  final String? rodape;
 
   @override
   Widget build(BuildContext context) => Card(
         child: ListTile(
           title: Text(titulo),
-          subtitle: LinearProgressIndicator(
-            value: valor / 100,
-            color: _cores[faixa],
-            backgroundColor: Colors.black12,
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LinearProgressIndicator(
+                value: valor / 100,
+                color: _cores[faixa],
+                backgroundColor: Colors.black12,
+              ),
+              if (rodape != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(rodape!,
+                      style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                ),
+            ],
           ),
           trailing: Column(
             mainAxisAlignment: MainAxisAlignment.center,

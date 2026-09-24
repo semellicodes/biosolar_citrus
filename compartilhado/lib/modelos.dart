@@ -3,6 +3,8 @@
 /// Dart puro: nada de Flutter, de cliente HTTP ou de framework aqui.
 library;
 
+import 'dart:math' as math;
+
 /// Faixa de alerta cromatica de um indicador (RN10).
 enum Faixa { verde, amarelo, vermelho }
 
@@ -16,6 +18,7 @@ enum TipoEvento {
   bloqueioLiberado,
   comandoAceito,
   comandoRecusado,
+  alertaDesperdicio,
   simulacaoReiniciada,
   velocidadeAlterada,
 }
@@ -53,6 +56,34 @@ class Limiares {
 
   /// RN03: consumo do reservatorio por bomba ligada, por ciclo.
   static const double consumoPorBombaPorTick = 0.8;
+
+  /// RN03: vazao maxima da captacao solar, no pico do dia.
+  ///
+  /// Calibrado em um quinto do consumo com as quatro bombas ligadas, ou seja,
+  /// a captacao nunca compensa a irrigacao plena e o reservatorio continua
+  /// caindo ate o bloqueio. Com as bombas paradas ela repoe agua devagar, o
+  /// que e o que permite a liberacao do bloqueio (RN09) acontecer ao vivo.
+  // ponytail: numero de calibragem. Subir se a liberacao demorar demais na
+  // apresentacao, baixar se o bloqueio deixar de acontecer.
+  static const double recargaSolarPico = 0.64;
+
+  /// Quanto o relogio da fazenda avanca a cada ciclo. Um dia inteiro leva 96
+  /// ciclos, cerca de meio minuto no modo demonstracao.
+  static const double horasPorTick = 0.25;
+
+  static const double amanhecer = 6;
+  static const double anoitecer = 18;
+}
+
+/// Intensidade da geracao solar em uma hora do dia, de 0 a 1.
+///
+/// Zero antes do amanhecer e depois do anoitecer, pico ao meio dia. E a mesma
+/// curva usada pela captacao de agua (RN03) e pelo balanco energetico (F08).
+double fatorSolar(double hora) {
+  if (hora <= Limiares.amanhecer || hora >= Limiares.anoitecer) return 0;
+  return math.sin(math.pi *
+      (hora - Limiares.amanhecer) /
+      (Limiares.anoitecer - Limiares.amanhecer));
 }
 
 double _limitar(double v) => v < 0 ? 0 : (v > 100 ? 100 : v);
@@ -223,12 +254,22 @@ class Telemetria {
     required this.talhoes,
     required this.bombas,
     required this.hora,
+    this.horaSimulada = Limiares.amanhecer,
   });
 
   final Reservatorio reservatorio;
   final List<Talhao> talhoes;
   final List<Bomba> bombas;
+
+  /// Instante real da leitura.
   final DateTime hora;
+
+  /// Hora do dia na fazenda simulada, de 0 a 24. E ela que define a curva
+  /// solar, e nao o relogio do servidor, para que a demonstracao funcione a
+  /// qualquer hora em que a banca assistir.
+  final double horaSimulada;
+
+  double get fatorSolarAtual => fatorSolar(horaSimulada);
 
   Bomba bombaDo(String talhaoId) =>
       bombas.firstWhere((b) => b.talhaoId == talhaoId);
@@ -238,12 +279,14 @@ class Telemetria {
     List<Talhao>? talhoes,
     List<Bomba>? bombas,
     DateTime? hora,
+    double? horaSimulada,
   }) =>
       Telemetria(
         reservatorio: reservatorio ?? this.reservatorio,
         talhoes: talhoes ?? this.talhoes,
         bombas: bombas ?? this.bombas,
         hora: hora ?? this.hora,
+        horaSimulada: horaSimulada ?? this.horaSimulada,
       );
 
   factory Telemetria.fromJson(Map<String, dynamic> json) => Telemetria(
@@ -256,6 +299,8 @@ class Telemetria {
             .map((e) => Bomba.fromJson(e as Map<String, dynamic>))
             .toList(),
         hora: DateTime.parse(json['hora'] as String),
+        horaSimulada: (json['horaSimulada'] as num?)?.toDouble() ??
+            Limiares.amanhecer,
       );
 
   Map<String, dynamic> toJson() => {
@@ -263,5 +308,7 @@ class Telemetria {
         'talhoes': talhoes.map((e) => e.toJson()).toList(),
         'bombas': bombas.map((e) => e.toJson()).toList(),
         'hora': hora.toIso8601String(),
+        'horaSimulada': horaSimulada,
+        'fatorSolar': fatorSolarAtual,
       };
 }

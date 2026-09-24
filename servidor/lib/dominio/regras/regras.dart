@@ -26,8 +26,12 @@ class Decisao {
 /// RN01, RN02 e RN03: avanco fisico da simulacao.
 ///
 /// A umidade cai nos talhoes sem aspersor e sobe nos irrigados. O reservatorio
-/// perde agua proporcionalmente ao numero de bombas ligadas e nao se altera
-/// quando todas estao desligadas.
+/// perde agua proporcionalmente ao numero de bombas ligadas e ganha agua pela
+/// captacao solar, cuja vazao acompanha a curva do sol e e nula a noite. No
+/// pico do dia a reposicao equivale a um quinto do consumo com todas as bombas
+/// ligadas, ou seja, ela nunca compensa a irrigacao plena: o reservatorio
+/// continua caindo ate o bloqueio. Com as bombas paradas ela repoe devagar, e
+/// e isso que permite a liberacao do bloqueio (RN09) acontecer de verdade.
 Telemetria atualizarSensores(Telemetria estado, DateTime agora) {
   final talhoes = [
     for (final talhao in estado.talhoes)
@@ -38,17 +42,20 @@ Telemetria atualizarSensores(Telemetria estado, DateTime agora) {
       ),
   ];
 
-  // RN03
+  // RN03: consumo das bombas contra a captacao solar.
+  final horaSimulada =
+      (estado.horaSimulada + Limiares.horasPorTick) % 24;
   final bombasLigadas = estado.bombas.where((b) => b.ligada).length;
-  final reservatorio = estado.reservatorio.copiarCom(
-    nivel: estado.reservatorio.nivel -
-        bombasLigadas * Limiares.consumoPorBombaPorTick,
-  );
+  final consumo = bombasLigadas * Limiares.consumoPorBombaPorTick;
+  final captacao = Limiares.recargaSolarPico * fatorSolar(horaSimulada);
+  final reservatorio =
+      estado.reservatorio.copiarCom(nivel: estado.reservatorio.nivel - consumo + captacao);
 
   return estado.copiarCom(
     talhoes: talhoes,
     reservatorio: reservatorio,
     hora: agora,
+    horaSimulada: horaSimulada,
   );
 }
 
@@ -153,8 +160,37 @@ Decisao avaliarIrrigacaoCritica(Telemetria estado, DateTime agora) {
       continue;
     }
 
-    // RN05: so o proprio sistema encerra o que o sistema ligou. Uma bomba
-    // acionada pelo operador continua sob responsabilidade dele.
+    // RN05: o sistema alerta sobre desperdicio mas nao tira a decisao do
+    // operador. A bomba que ele ligou continua ligada, so o bloqueio a derruba.
+    //
+    // O aviso sai uma vez, no ciclo em que a umidade cruza o patamar, e outra
+    // ao saturar em 100%. Sao dois testes de cruzamento, sem guardar estado.
+    if (bomba.ligada && bomba.origemUltimoAcionamento == Origem.operador) {
+      final cruzouPatamar =
+          talhao.umidade >= Limiares.umidadeSegura &&
+              talhao.umidade - Limiares.ganhoUmidadePorTick <
+                  Limiares.umidadeSegura;
+      final saturou = talhao.umidade >= 100 &&
+          talhao.umidade - Limiares.ganhoUmidadePorTick < 100;
+      if (cruzouPatamar || saturou) {
+        eventos.add(Evento(
+          hora: agora,
+          tipo: TipoEvento.alertaDesperdicio,
+          origem: Origem.sistema,
+          descricao: 'Desperdicio em ${talhao.nome}',
+          motivo: saturou
+              ? 'Solo saturado em 100% e a irrigacao manual continua ligada'
+              : 'Umidade em ${talhao.umidade.toStringAsFixed(1)}% ja passou do '
+                  'patamar de seguranca de '
+                  '${Limiares.umidadeSegura.toStringAsFixed(0)}% e a irrigacao '
+                  'manual continua ligada',
+        ));
+      }
+      bombas.add(bomba);
+      continue;
+    }
+
+    // RN05: so o proprio sistema encerra o que o sistema ligou.
     if (bomba.ligada &&
         bomba.origemUltimoAcionamento == Origem.sistema &&
         talhao.umidade >= Limiares.umidadeSegura) {

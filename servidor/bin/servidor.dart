@@ -31,7 +31,10 @@ Future<void> main(List<String> argumentos) async {
     final bombas =
         estado.bombas.where((b) => b.ligada).map((b) => b.id).join(' ');
 
+    final sol = (estado.fatorSolarAtual * 10).round();
     print('${_hora(estado.hora)} | '
+        '${estado.horaSimulada.floor().toString().padLeft(2, '0')}h '
+        '${('*' * sol).padRight(10)} | '
         'reservatorio ${_pinta(reservatorio.faixa, '${reservatorio.nivel.toStringAsFixed(1).padLeft(5)}%')}'
         '${reservatorio.bloqueioAtivo ? ' \x1b[41m BLOQUEIO \x1b[0m' : '          '} | '
         '${estado.talhoes.map((t) => _pinta(t.faixa, '${t.nome.split(' ').last.padRight(6)}${t.umidade.toStringAsFixed(1).padLeft(5)}%')).join('  ')}'

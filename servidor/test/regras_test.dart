@@ -14,8 +14,11 @@ Telemetria fazenda({
   bool ligada = false,
   bool bloqueio = false,
   Origem? origem,
+  // Meia noite por padrao: sem captacao solar, para isolar a regra sob teste.
+  double horaSimulada = 0,
 }) =>
     Telemetria(
+      horaSimulada: horaSimulada,
       reservatorio: Reservatorio(
           nivel: nivel, capacidadeLitros: 50000, bloqueioAtivo: bloqueio),
       talhoes: [
@@ -44,7 +47,8 @@ void main() {
         closeTo(30 + Limiares.ganhoUmidadePorTick, 0.001));
   });
 
-  test('T03 RN03: reservatorio so perde agua quando existe bomba ligada', () {
+  test('T03 RN03: consumo proporcional as bombas, contra a captacao solar', () {
+    // A noite nao ha captacao, entao o nivel so responde as bombas.
     expect(atualizarSensores(fazenda(nivel: 80), agora).reservatorio.nivel,
         closeTo(80, 0.001));
     expect(
@@ -52,6 +56,71 @@ void main() {
             .reservatorio
             .nivel,
         closeTo(80 - Limiares.consumoPorBombaPorTick, 0.001));
+
+    // Ao meio dia, com as bombas paradas, a captacao repoe no pico.
+    final meioDia = fazenda(nivel: 80, horaSimulada: 12 - Limiares.horasPorTick);
+    expect(atualizarSensores(meioDia, agora).reservatorio.nivel,
+        closeTo(80 + Limiares.recargaSolarPico, 0.001));
+  });
+
+  test('T11 RN03: a captacao solar segue a curva do sol e nunca compensa a '
+      'irrigacao plena', () {
+    expect(fatorSolar(3), 0, reason: 'madrugada');
+    expect(fatorSolar(Limiares.amanhecer), 0);
+    expect(fatorSolar(12), closeTo(1, 0.001), reason: 'pico ao meio dia');
+    expect(fatorSolar(Limiares.anoitecer), 0);
+    expect(fatorSolar(21), 0, reason: 'noite');
+
+    // Quatro bombas ligadas no pico do sol: o reservatorio ainda cai, que e o
+    // que garante que a demonstracao chegue ao bloqueio.
+    final quatroBombas = Telemetria(
+      horaSimulada: 12 - Limiares.horasPorTick,
+      reservatorio: const Reservatorio(
+          nivel: 80, capacidadeLitros: 50000, bloqueioAtivo: false),
+      talhoes: [
+        for (var i = 1; i <= 4; i++)
+          Talhao(id: 't$i', nome: 'T$i', cultura: 'citros', umidade: 30)
+      ],
+      bombas: [
+        for (var i = 1; i <= 4; i++)
+          Bomba(id: 'b$i', talhaoId: 't$i', ligada: true)
+      ],
+      hora: agora,
+    );
+
+    final depois = atualizarSensores(quatroBombas, agora);
+    expect(depois.reservatorio.nivel, lessThan(80));
+    expect(Limiares.recargaSolarPico,
+        closeTo(4 * Limiares.consumoPorBombaPorTick / 5, 0.001),
+        reason: 'captacao calibrada em um quinto do consumo com carga total');
+  });
+
+  test('T12 RN05: irrigacao manual acima do patamar gera alerta sem desligar',
+      () {
+    // O operador ligou e a umidade acabou de cruzar o patamar de seguranca.
+    final manual = fazenda(
+        umidade: Limiares.umidadeSegura,
+        ligada: true,
+        origem: Origem.operador);
+    final decisao = avaliarIrrigacaoCritica(manual, agora);
+
+    expect(decisao.telemetria.bombas.single.ligada, isTrue,
+        reason: 'a decisao continua sendo do operador');
+    expect(decisao.eventos.single.tipo, TipoEvento.alertaDesperdicio);
+    expect(decisao.eventos.single.origem, Origem.sistema);
+
+    // O aviso nao se repete nos ciclos seguintes.
+    final adiante = fazenda(
+        umidade: Limiares.umidadeSegura + 10,
+        ligada: true,
+        origem: Origem.operador);
+    expect(avaliarIrrigacaoCritica(adiante, agora).eventos, isEmpty);
+
+    // Mas o solo saturado gera um segundo aviso.
+    final saturado =
+        fazenda(umidade: 100, ligada: true, origem: Origem.operador);
+    expect(avaliarIrrigacaoCritica(saturado, agora).eventos.single.motivo,
+        contains('saturado'));
   });
 
   test('T04 RN04: irrigacao aciona sozinha ao cruzar o limite critico', () {

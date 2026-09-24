@@ -36,9 +36,25 @@ como funcoes puras, e sao provadas pelos testes T01 a T10 em
 
 | | Regra | Limiar |
 | --- | --- | --- |
+| RN03 | Balanco hidrico | consumo de 0,8 por bomba por ciclo, contra a captacao solar, que segue a curva do sol e vale no maximo 0,64, um quinto do consumo com as quatro bombas ligadas |
 | RN04 | Irrigacao critica automatica | umidade < 25% |
-| RN05 | Encerramento da irrigacao | umidade >= 45% (histerese) |
+| RN05 | Encerramento da irrigacao automatica | umidade >= 45% (histerese). A irrigacao manual nao e desligada, so gera alerta de desperdicio |
 | RN06 | Bloqueio de emergencia | reservatorio < 15% |
 | RN07 | Bloqueio tem precedencia sobre a irrigacao | garantido pela ordem do ciclo e por guarda na regra |
 | RN08 | Comando manual recusado no bloqueio | HTTP 409 com o motivo |
-| RN09 | Liberacao do bloqueio | reservatorio >= 25% |
+| RN09 | Liberacao do bloqueio | reservatorio >= 25%, alcancado pela captacao solar com as bombas paradas |
+
+### Sobre a captacao solar
+
+A captacao nunca compensa a irrigacao plena, entao o reservatorio continua
+caindo ate o bloqueio na demonstracao. Com as bombas paradas ela repoe agua
+devagar, e e isso que faz a liberacao do bloqueio (RN09) acontecer ao vivo em
+vez de existir so no teste. A vazao e nula a noite e maxima ao meio dia, e seu
+valor de calibragem e `Limiares.recargaSolarPico`.
+
+### Sobre a irrigacao manual
+
+O sistema nao desliga uma bomba que o operador ligou, nem quando a umidade ja
+passou do patamar de seguranca. Ele registra um alerta de desperdicio no
+historico e deixa a decisao com quem a tomou. So o bloqueio de emergencia
+derruba bomba de operador, que e o que o caderno chama de irrestrito.
