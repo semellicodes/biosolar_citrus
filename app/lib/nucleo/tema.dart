@@ -22,6 +22,9 @@ abstract final class Espaco {
 abstract final class Raio {
   static const double card = 10;
   static const double interno = 6;
+
+  /// Canto totalmente arredondado, para o botao de acionamento.
+  static const double pilula = 999;
 }
 
 abstract final class Cores {
@@ -245,11 +248,13 @@ class BarraNivel extends StatelessWidget {
 
 /// Botão de acionamento, no lugar do Switch do Material.
 ///
-/// Feito para ser tocado com uma mão, de pé no meio do pomar: ocupa a largura
-/// do cartão, tem 56 pixels de altura e o rótulo diz a ação que vai acontecer,
-/// não o estado, porque o estado já está escrito acima dele. Durante o bloqueio
-/// mostra cadeado, em vez de ficar apenas cinza, que é como um Switch
-/// desabilitado se parece com um Switch qualquer.
+/// Feito para ser tocado com uma mão, de pé no meio do pomar: 56 pixels de
+/// altura e o rótulo dizendo a ação que vai acontecer, não o estado, porque o
+/// estado já está escrito acima dele.
+///
+/// Acionar é a ação de destaque, então vem preenchida. Desligar é a de recuo,
+/// então vem vazada. Durante o bloqueio mostra cadeado, em vez de ficar apenas
+/// cinza, que é como um Switch desabilitado se parece com um Switch qualquer.
 class Interruptor extends StatelessWidget {
   const Interruptor({
     required this.ligado,
@@ -270,12 +275,13 @@ class Interruptor extends StatelessWidget {
     if (travado) {
       return Container(
         height: altura,
+        padding: const EdgeInsets.symmetric(horizontal: Espaco.g),
         decoration: BoxDecoration(
           color: Cores.superficieAlta,
-          borderRadius: BorderRadius.circular(Raio.interno),
+          borderRadius: BorderRadius.circular(Raio.pilula),
           border: Border.all(color: Cores.borda),
         ),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
           const Icon(Icons.lock_outline, size: 20, color: Cores.textoSecundario),
           const SizedBox(width: Espaco.p),
           Text('Travado pelo bloqueio',
@@ -284,29 +290,26 @@ class Interruptor extends StatelessWidget {
       );
     }
 
-    // Ligar e a acao de destaque, entao ela vem solida. Desligar e a acao de
-    // recuo, entao vem contornada: as duas com o mesmo tamanho de alvo.
+    final cor = ligado ? Cores.texto : Colors.white;
+
     return GestureDetector(
       onTap: () => aoAlternar(!ligado),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         height: altura,
-        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: Espaco.g),
         decoration: BoxDecoration(
-          color: ligado ? Cores.superficie : Cores.verde,
-          borderRadius: BorderRadius.circular(Raio.interno),
+          color: ligado ? Colors.transparent : Cores.verde,
+          borderRadius: BorderRadius.circular(Raio.pilula),
           border: Border.all(
-              color: ligado ? Cores.textoSecundario : Cores.verde,
-              width: 2),
+              color: ligado ? Cores.borda : Cores.verde, width: 1),
         ),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(ligado ? Icons.stop_circle_outlined : Icons.water_drop,
-              size: 22,
-              color: ligado ? Cores.texto : Colors.white),
+              size: 20, color: cor),
           const SizedBox(width: Espaco.p),
-          Text(ligado ? 'Desligar irrigação' : 'Ligar irrigação',
-              style: Fontes.titulo(ligado ? Cores.texto : Colors.white,
-                  tamanho: 18)),
+          Text(ligado ? 'Desligar irrigação' : 'Acionar irrigação',
+              style: Fontes.titulo(cor, tamanho: 17)),
         ]),
       ),
     );

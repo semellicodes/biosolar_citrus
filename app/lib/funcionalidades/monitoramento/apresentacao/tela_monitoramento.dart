@@ -816,10 +816,15 @@ class _LinhaTalhao extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: celular ? Espaco.p : Espaco.m),
-          Interruptor(
-            ligado: bomba.ligada,
-            travado: travado,
-            aoAlternar: (ligar) => aoAlternar(bomba, ligar),
+          // Alinhado à direita: o botão tem a largura do próprio rótulo, e o
+          // canto de leitura do cartão continua sendo a esquerda.
+          Align(
+            alignment: Alignment.centerRight,
+            child: Interruptor(
+              ligado: bomba.ligada,
+              travado: travado,
+              aoAlternar: (ligar) => aoAlternar(bomba, ligar),
+            ),
           ),
         ],
       ),
