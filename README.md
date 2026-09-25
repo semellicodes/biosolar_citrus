@@ -12,8 +12,9 @@ continua sendo irrigada corretamente.
 
 **Segundo lugar no HackUFRA**, V Jornada de Tecnologia da Informação.
 
-Caderno de Desafio Opção 03. Autora: Paula. Universidade Federal Rural da
-Amazônia, Campus Capitão Poço.
+Solução desenvolvida por Paula, estudante da Universidade Federal Rural da
+Amazônia, Campus Capitão Poço, para a Opção 03 do Caderno de Desafio proposto
+pela organização do evento.
 
 ## Como rodar
 
