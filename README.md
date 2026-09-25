@@ -99,7 +99,7 @@ funcione e não está no enunciado.
 | --- | --- | --- | --- |
 | RN01 | Queda natural da umidade | 1,2 ponto por ciclo em talhão sem irrigação | Caderno, taxa calibrada aqui |
 | RN02 | Recuperação por irrigação | 3,0 pontos por ciclo com aspersor ligado | Caderno, taxa calibrada aqui |
-| RN03 | Consumo do reservatório | 0,8 por bomba ligada por ciclo | Caderno, taxa calibrada aqui |
+| RN03 | Consumo do reservatório | 0,40 por bomba ligada por ciclo | Caderno, taxa calibrada aqui |
 | RN04 | Irrigação crítica automática | umidade abaixo de 25% aciona o aspersor | Caderno |
 | RN05 | Encerramento da irrigação automática | umidade de volta a 45%, acima do gatilho para criar histerese | Caderno, patamar e histerese decididos aqui |
 | RN06 | Bloqueio de emergência | reservatório abaixo de 15% desliga todas as bombas | Caderno |
@@ -108,7 +108,7 @@ funcione e não está no enunciado.
 | RN09 | Liberação do bloqueio | reservatório de volta a 25% | Decisão de projeto |
 | RN10 | Faixas de alerta | verde, amarelo e vermelho, com rótulo escrito junto da cor | Caderno, fronteiras decididas aqui |
 | RN11 | Origem do evento | todo evento identifica se foi operador ou sistema | Decisão de projeto |
-| RN12 | Captação solar | vazão que acompanha a curva do sol, nula à noite, no pico valendo um quinto do consumo com as quatro bombas ligadas | Decisão de projeto |
+| RN12 | Captação solar | vazão que acompanha a curva do sol, nula à noite, no pico valendo 1,50 contra os 1,60 que quatro bombas consomem | Decisão de projeto |
 
 O caderno define os dois limiares que importam, 25% de umidade e 15% de
 reservatório. Todo o resto, as taxas de queda e recuperação, o consumo por
@@ -120,12 +120,20 @@ que os cenários aconteçam em tempo de demonstração.
 O caderno define o consumo do reservatório, mas não diz o que o reabastece. Sem
 reposição, depois do primeiro bloqueio o nível ficaria parado para sempre e a
 RN09 nunca aconteceria fora dos testes. A captação solar resolve isso e faz o
-nome do projeto significar alguma coisa: ela segue a curva do sol, é nula à
-noite, e no pico do dia vale um quinto do consumo com as quatro bombas ligadas.
-Ou seja, **ela nunca compensa a irrigação plena**, então o reservatório continua
-caindo até o bloqueio como o caderno espera. Com as bombas paradas ela repõe
-água devagar, e é isso que faz a liberação acontecer ao vivo na demonstração. O
-valor de calibragem é `Limiares.recargaSolarPico`.
+nome do projeto significar alguma coisa.
+
+A calibragem dela é o coração do comportamento do sistema, e são dois números em
+tensão. No pico do dia a captação vale **1,50**, contra os **1,60** que as quatro
+bombas consomem juntas: irrigar tudo ao mesmo tempo derruba o reservatório mesmo
+ao meio-dia, e é por isso que o bloqueio continua sendo alcançável. Mas a
+irrigação é intermitente e a captação só falta à noite, então **na média do dia
+ela cobre a manutenção dos quatro talhões** e a fazenda se sustenta.
+
+É essa diferença que separa escassez de colapso. Com a captação abaixo da
+manutenção, o sistema entra num estado absorvente: depois do primeiro bloqueio a
+janela de irrigação fica curta demais para tirar qualquer talhão do crítico, e o
+painel nunca mais sai do vermelho. O **T13** existe para provar que a calibragem
+está do lado certo dessa fronteira.
 
 ### Contrato da API
 
@@ -214,7 +222,7 @@ Dois detalhes que valem apontar:
 
 ## Testes
 
-Dezesseis testes no total, executados a cada envio pela rotina de integração
+Dezessete testes no total, executados a cada envio pela rotina de integração
 contínua em [`.github/workflows/ci.yaml`](.github/workflows/ci.yaml). As regras
 são funções puras, então os testes mais importantes do projeto são também os
 mais simples de escrever, sem nenhum objeto falso e sem subir servidor.
@@ -244,23 +252,30 @@ do repositório:
 | T10 | Todo evento identifica corretamente a origem | RN11 |
 | T11 | A captação solar segue a curva do sol e nunca compensa a irrigação plena | RN12 |
 | T12 | A irrigação manual acima do patamar alerta sem desligar, e alerta uma vez só | RN05 |
+| T13 | **Na média do dia a captação cobre a manutenção dos talhões** | RN12 |
 
 O **T07 é o mais valioso da suíte**, porque documenta a precedência entre as duas
 regras críticas do desafio, que é o ponto onde a maioria das implementações
 falha. O T12 roda duzentos ciclos até o solo saturar em 100%, porque é ali que
 um teste de cruzamento ingênuo vira condição permanente e o alerta viraria spam.
 
+O **T13 guarda a fronteira entre escassez e colapso**. Ele compara a captação
+média do dia com o consumo de manutenção dos quatro talhões, e falha se a
+calibragem cair para o lado errado. Sem ele, mudar `consumoPorBombaPorTick` ou
+`recargaSolarPico` pode devolver o sistema ao estado em que nenhum talhão sai do
+crítico depois do primeiro bloqueio, e nada nos outros testes acusaria.
+
 Os quatro testes de bloc cobrem o que a interface promete: telemetria recebida
 vira estado carregado, a perda de contato não apaga a última leitura conhecida,
 a leitura seguinte reconecta a tela sozinha, e a recusa do servidor chega à
 interface com a mensagem original.
 
-## Balanço hídrico e regime de escassez
+## Balanço hídrico
 
-O reservatório opera em déficit, e isso não é acidente de calibragem: é o
-cenário que o caderno descreve. Durante a estiagem, a demanda de irrigação de um
-pomar supera com folga o que a captação solar consegue repor, e a medição abaixo
-quantifica exatamente isso.
+A fazenda opera no limite, e de propósito. A captação solar cobre a manutenção
+dos talhões por pouco, mas não cobre irrigação plena simultânea, e é essa margem
+estreita que faz o sistema ter os dois comportamentos que o caderno pede: ele
+chega ao bloqueio de emergência e também se recupera dele.
 
 ### Os números, medidos
 
@@ -271,56 +286,57 @@ ligadas em média, de forma contínua.
 
 | | Cálculo | Pontos percentuais por dia |
 | --- | --- | --- |
-| Captação solar | `0,64 x média do seno x 48 ciclos de sol` | **19,6** |
-| Consumo da irrigação | `1,14 bombas x 0,8 x 96 ciclos` | **87,8** |
-| Saldo | | **-68,2** |
+| Captação solar | `1,50 x média do seno x 48 ciclos de sol` | **45,8** |
+| Consumo de manutenção | `1,14 bombas x 0,40 x 96 ciclos` | **43,9** |
+| Saldo | | **+2,0** |
 
-**O consumo é cerca de 4,5 vezes a captação.** O único momento em que o nível
-sobe é durante o bloqueio, com todas as bombas desligadas, e por isso o sistema
-se estabiliza oscilando entre 13% e 25%: é o único equilíbrio possível com esta
-fazenda.
+A folga é de 4%. No pico do dia, porém, quatro bombas ligadas consomem 1,60
+contra os 1,50 da captação, então **irrigação plena simultânea derruba o
+reservatório mesmo ao meio-dia**. O sistema é sustentável em regime e vulnerável
+em pico, que é exatamente o que torna o bloqueio uma proteção necessária em vez
+de um detalhe decorativo.
 
-Observado em execução, com a simulação acelerada:
+### O cenário, observado em execução
 
-| Hora simulada | Nível | Bloqueio | Bombas |
-| --- | --- | --- | --- |
-| 12h | 24,7% | ativo | 0 |
-| 13h | 17,7% | liberado | 4 |
-| 14h | 13,6% | ativo | 0 |
-| 18h às 6h | 18,2% | ativo | 0 |
-| 8h | 19,7% | ativo | 0 |
+O estado inicial coloca a fazenda em estiagem de madrugada: reservatório em 26%,
+os quatro talhões abaixo ou rente ao gatilho, e o relógio às 3h, quando não há
+sol nenhum para repor água. Medido em velocidade normal, a partir do reset:
 
-O bloqueio é liberado quando a captação leva o nível aos 25%, as quatro bombas
-ligam de uma vez nos talhões secos e derrubam onze pontos em uma hora simulada,
-e o bloqueio volta. À noite o nível fica parado, porque a captação é solar.
+| Tempo real | Hora na fazenda | O que acontece |
+| --- | --- | --- |
+| 0s | 03h | Reservatório 26%, talhões entre 20% e 26% |
+| ~4s | 04h | As quatro bombas ligam sozinhas (RN04) |
+| **15s** | 05h | **Bloqueio de emergência** aos 14,8% (RN06) |
+| **53s** | 09h | **Liberação** aos 25,6%, pela captação solar (RN09, RN12) |
+| daí em diante | | Reservatório entre 23% e 44%, talhões ciclando entre 20% e 47% |
 
-### O que isso quer dizer
+Os três cenários da apresentação cabem em **53 segundos sem acelerar nada**, e
+depois o sistema se mantém estável sozinho. O bloqueio acontece de madrugada,
+quando a captação é zero, e quem traz a fazenda de volta é o amanhecer.
 
-**A fazenda é subdimensionada para irrigação plena.** Dimensionar reservatório e
-captação para a demanda do pomar é decisão de projeto agronômico, não de
+### Dimensionamento
+
+Uma fazenda real não é calibrada assim por acaso. Dimensionar reservatório e
+captação para a demanda de um pomar é decisão de projeto agronômico, não de
 software: envolve área irrigada, cultura, evapotranspiração local e orçamento de
-painel solar. O papel do sistema de automação diante de uma fazenda assim é
-exatamente o que ele faz, que é **impedir que o reservatório zere**, irrigando
-enquanto há água e travando tudo quando não há.
-
-Uma calibragem alternativa, se o objetivo fosse um cenário que se recupera em
-vez de oscilar, seria mexer no estado inicial em vez das taxas: partir de
-talhões bem secos para o bloqueio acontecer logo no começo, e reduzir o consumo
-por bomba para que a fazenda se sustente depois disso. Os números atuais foram
-escolhidos para que o bloqueio aconteça de forma confiável na demonstração.
+painel solar. O que o sistema de automação faz diante do dimensionamento que
+recebeu é irrigar enquanto há água, travar tudo quando não há, e voltar a operar
+quando a fonte se recupera.
 
 ### Irrigação sem priorização
 
 O sistema trata todos os talhões com igualdade, então quando o bloqueio é
-liberado todos os que estiverem abaixo do gatilho são irrigados ao mesmo tempo.
-Uma regra de priorização por criticidade, irrigando apenas o talhão mais seco
-abaixo de um patamar de conforto, suavizaria a queda e entraria como mais uma
-função no mesmo módulo de regras, sem tocar em transporte nem em interface.
+liberado todos os que estiverem abaixo do gatilho são irrigados ao mesmo tempo,
+o que é justamente o pico de consumo que o reservatório não sustenta. Uma regra
+de priorização por criticidade, irrigando apenas o talhão mais seco abaixo de um
+patamar de conforto, suavizaria essa queda e entraria como mais uma função no
+mesmo módulo de regras, sem tocar em transporte nem em interface.
 
-Vale a ressalva de que ela **não elimina o déficit**: como a manutenção dos
-quatro talhões exige 1,14 bombas em média, uma bomba de cada vez não dá conta do
-pomar inteiro. O problema é de dimensionamento, e a priorização trata do
-sintoma.
+Vale registrar o que foi medido a respeito: a priorização **não** substitui o
+dimensionamento. Numa calibragem em que a captação fica abaixo da manutenção,
+simular uma bomba por vez não tira os talhões do crítico, porque enquanto um
+sobe 3,0 os outros três caem 1,2 cada. A priorização melhora o pico; quem
+resolve o regime é o balanço da tabela acima.
 
 ### Pausa noturna da captação
 
