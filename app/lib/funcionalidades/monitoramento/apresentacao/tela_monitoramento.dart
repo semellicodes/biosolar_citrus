@@ -120,80 +120,107 @@ class _Painel extends StatelessWidget {
                           constraints: const BoxConstraints(
                             maxWidth: _larguraMaxima,
                           ),
-                          child: ListView(
-                            padding: EdgeInsets.fromLTRB(
-                              celular ? Espaco.m : Espaco.g,
-                              Espaco.m,
-                              celular ? Espaco.m : Espaco.g,
-                              Espaco.xg,
-                            ),
-                            children: [
-                              _Topo(
-                                celular: celular,
-                                telemetria: telemetria,
-                                desconectado: desconectado,
-                                emTempoReal: emTempoReal,
-                                aoAbrirHistorico: () => Navigator.of(
-                                  context,
-                                ).pushNamed(TelaEventos.rota),
-                                aoAcelerar: () => comandos.add(
-                                  const VelocidadeSolicitada(acelerada: true),
-                                ),
-                                aoNormalizar: () => comandos.add(
-                                  const VelocidadeSolicitada(acelerada: false),
-                                ),
-                                aoReiniciar: () =>
-                                    comandos.add(const ReinicioSolicitado()),
-                                chovendo: telemetria.chovendo,
-                                aoAlternarChuva: () => comandos.add(
-                                  ChuvaSolicitada(
-                                    chovendo: !telemetria.chovendo,
-                                  ),
-                                ),
+                          // Máscara de desvanecimento no topo da área rolável: o conteúdo
+                          // some por baixo da borda em vez de cortar em linha reta.
+                          // BlendMode.dstIn usa só o alfa do degradê, então isto não é
+                          // desfoque e não custa nada durante a rolagem.
+                          //
+                          // O degradê tem a altura do respiro superior da lista, então com a
+                          // lista no topo ele cai sobre espaço vazio e não esconde nada.
+                          child: ShaderMask(
+                            blendMode: BlendMode.dstIn,
+                            shaderCallback: (area) => LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Cores.fundo.withValues(alpha: 0),
+                                Cores.fundo,
+                              ],
+                              stops: [
+                                0,
+                                (Espaco.g / area.height).clamp(0.0, 1.0),
+                              ],
+                            ).createShader(area),
+                            child: ListView(
+                              padding: EdgeInsets.fromLTRB(
+                                celular ? Espaco.m : Espaco.g,
+                                Espaco.g,
+                                celular ? Espaco.m : Espaco.g,
+                                Espaco.xg,
                               ),
-                              const SizedBox(height: Espaco.g),
-
-                              // Sem contato, o bloqueio que a tela mostra é
-                              // informação velha: o aviso de defasagem vence e o de
-                              // bloqueio sai.
-                              if (desconectado)
-                                _FaixaDefasagem(
-                                  'Defasado desde ${_hora(telemetria.hora)}. '
-                                  'Reconectando.',
-                                )
-                              else if (bloqueado)
-                                _FaixaBloqueio(
-                                  aoTentar: () => comandos.add(
-                                    AcionamentoSolicitado(
-                                      telemetria.bombas.first.id,
-                                      ligar: true,
+                              children: [
+                                _Topo(
+                                  celular: celular,
+                                  telemetria: telemetria,
+                                  desconectado: desconectado,
+                                  emTempoReal: emTempoReal,
+                                  aoAbrirHistorico: () => Navigator.of(
+                                    context,
+                                  ).pushNamed(TelaEventos.rota),
+                                  aoAcelerar: () => comandos.add(
+                                    const VelocidadeSolicitada(acelerada: true),
+                                  ),
+                                  aoNormalizar: () => comandos.add(
+                                    const VelocidadeSolicitada(
+                                      acelerada: false,
+                                    ),
+                                  ),
+                                  aoReiniciar: () =>
+                                      comandos.add(const ReinicioSolicitado()),
+                                  chovendo: telemetria.chovendo,
+                                  aoAlternarChuva: () => comandos.add(
+                                    ChuvaSolicitada(
+                                      chovendo: !telemetria.chovendo,
                                     ),
                                   ),
                                 ),
+                                const SizedBox(height: Espaco.g),
 
-                              _CartaoReservatorio(
-                                telemetria: telemetria,
-                                celular: celular,
-                              ),
-                              SizedBox(height: celular ? Espaco.m : Espaco.g),
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  left: Espaco.xs,
-                                  bottom: Espaco.p,
+                                // Sem contato, o bloqueio que a tela mostra é
+                                // informação velha: o aviso de defasagem vence e o de
+                                // bloqueio sai.
+                                if (desconectado)
+                                  _FaixaDefasagem(
+                                    'Defasado desde ${_hora(telemetria.hora)}. '
+                                    'Reconectando.',
+                                  )
+                                else if (bloqueado)
+                                  _FaixaBloqueio(
+                                    aoTentar: () => comandos.add(
+                                      AcionamentoSolicitado(
+                                        telemetria.bombas.first.id,
+                                        ligar: true,
+                                      ),
+                                    ),
+                                  ),
+
+                                _CartaoReservatorio(
+                                  telemetria: telemetria,
+                                  celular: celular,
                                 ),
-                                child: Text('TALHÕES', style: Fontes.secao()),
-                              ),
-                              _ListaTalhoes(
-                                celular: celular,
-                                telemetria: telemetria,
-                                // RF11. O servidor recusa de qualquer jeito (RN08);
-                                // travar aqui é conveniência, não segurança.
-                                travado: bloqueado || desconectado,
-                                aoAlternar: (bomba, ligar) => comandos.add(
-                                  AcionamentoSolicitado(bomba.id, ligar: ligar),
+                                SizedBox(height: celular ? Espaco.m : Espaco.g),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: Espaco.xs,
+                                    bottom: Espaco.p,
+                                  ),
+                                  child: Text('TALHÕES', style: Fontes.secao()),
                                 ),
-                              ),
-                            ],
+                                _ListaTalhoes(
+                                  celular: celular,
+                                  telemetria: telemetria,
+                                  // RF11. O servidor recusa de qualquer jeito (RN08);
+                                  // travar aqui é conveniência, não segurança.
+                                  travado: bloqueado || desconectado,
+                                  aoAlternar: (bomba, ligar) => comandos.add(
+                                    AcionamentoSolicitado(
+                                      bomba.id,
+                                      ligar: ligar,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );
