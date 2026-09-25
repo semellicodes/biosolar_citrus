@@ -21,6 +21,9 @@ const double _larguraMaxima = 1100;
 /// Abaixo disto a linha do talhão empilha em vez de usar três blocos.
 const double _corteLinha = 620;
 
+/// Abaixo disto o cartão do reservatório deixa de ser duas colunas.
+const double _corteColunas = 700;
+
 class TelaMonitoramento extends StatelessWidget {
   const TelaMonitoramento({super.key});
 
@@ -399,32 +402,75 @@ class _CartaoReservatorio extends StatelessWidget {
     final fator = telemetria.fatorSolarAtual;
     final noite = fator == 0;
 
-    return Cartao(
-      preenchimento: const EdgeInsets.all(Espaco.g),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    final nivel = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
         Text('RESERVATÓRIO', style: Fontes.secao()),
         const SizedBox(height: Espaco.m),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            ValorAnimado(valor: reservatorio.nivel, cor: cor, tamanho: 50),
-            const SizedBox(width: Espaco.m),
-            PontoEstado(reservatorio.faixa),
-          ],
-        ),
+        Row(children: [
+          ValorAnimado(valor: reservatorio.nivel, cor: cor, tamanho: 50),
+          const SizedBox(width: Espaco.m),
+          PontoEstado(reservatorio.faixa),
+        ]),
         const SizedBox(height: Espaco.m),
         BarraNivel(fracao: reservatorio.nivel / 100, cor: cor),
         const SizedBox(height: Espaco.g),
-        _BarrasSolares(telemetria: telemetria),
-        const SizedBox(height: Espaco.m),
-        ParDado('Captação solar',
-            noite ? 'parada (noite)' : '${(fator * 100).round()}%',
-            cor: noite ? Cores.textoSecundario : Cores.ambar),
+        ParDado('Capacidade',
+            '${(reservatorio.capacidadeLitros / 1000).toStringAsFixed(0)} mil litros'),
         const SizedBox(height: Espaco.p),
-        const ParDado('Pico previsto', '12h  ·  captação máxima'),
+        const ParDado('Pico previsto', '12h'),
         const SizedBox(height: Espaco.p),
         ParDado('Última leitura', _hora(telemetria.hora)),
-      ]),
+      ],
+    );
+
+    Widget captacaoCom(double alturaGrafico) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(children: [
+          Expanded(child: Text('CAPTAÇÃO SOLAR', style: Fontes.secao())),
+          Text(
+            noite
+                ? 'parada (noite)'
+                : '${(fator * 100).round()}%  ·  '
+                    '${telemetria.horaSimulada.floor().toString().padLeft(2, '0')}h',
+            style: Fontes.corpo(
+                noite ? Cores.textoSecundario : Cores.ambar,
+                tamanho: 12),
+          ),
+        ]),
+        const SizedBox(height: Espaco.m),
+        _BarrasSolares(telemetria: telemetria, altura: alturaGrafico),
+      ],
+    );
+
+    return Cartao(
+      preenchimento: const EdgeInsets.all(Espaco.g),
+      child: LayoutBuilder(builder: (context, limites) {
+        // Abaixo do corte as duas colunas empilham, com o gráfico embaixo.
+        if (limites.maxWidth < _corteColunas) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              nivel,
+              const SizedBox(height: Espaco.g),
+              captacaoCom(56),
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: nivel),
+            const SizedBox(width: Espaco.xg),
+            // Mais alto em duas colunas, para o gráfico equilibrar a coluna
+            // da esquerda em vez de ficar uma tira no topo.
+            Expanded(child: captacaoCom(122)),
+          ],
+        );
+      }),
     );
   }
 }
@@ -437,13 +483,14 @@ class _CartaoReservatorio extends StatelessWidget {
 /// Align e Container para doze barras rendeu alturas todas iguais, e aqui cada
 /// retângulo é explícito.
 class _BarrasSolares extends StatelessWidget {
-  const _BarrasSolares({required this.telemetria});
+  const _BarrasSolares({required this.telemetria, required this.altura});
 
   final Telemetria telemetria;
+  final double altura;
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: 52,
+        height: altura,
         width: double.infinity,
         child: CustomPaint(
           painter: _PintorBarras(horaAtual: telemetria.horaSimulada.floor()),

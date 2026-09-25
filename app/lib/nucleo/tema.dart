@@ -237,21 +237,15 @@ class Interruptor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Sem pílula: cadeado e a palavra, como o estado ao lado. O que comunica
+    // aqui é o ícone e o texto, não uma caixa em volta deles.
     if (travado) {
-      return Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: Espaco.p + 2, vertical: Espaco.xs + 2),
-        decoration: BoxDecoration(
-          color: Cores.fundo,
-          borderRadius: BorderRadius.circular(Raio.interno),
-          border: Border.all(color: Cores.borda),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.lock_outline, size: 12, color: Cores.textoTerciario),
-          const SizedBox(width: Espaco.p - 2),
-          Text('Travado', style: Fontes.corpo(Cores.textoTerciario, tamanho: 12)),
-        ]),
-      );
+      return Row(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.lock_outline, size: 13, color: Cores.textoTerciario),
+        const SizedBox(width: Espaco.p - 2),
+        Text('Travado',
+            style: Fontes.corpo(Cores.textoTerciario, tamanho: 12)),
+      ]);
     }
 
     return Container(
