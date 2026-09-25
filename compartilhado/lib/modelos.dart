@@ -57,17 +57,20 @@ class Limiares {
   static const double ganhoUmidadePorTick = 3.0;
 
   /// RN03: consumo do reservatorio por bomba ligada, por ciclo.
-  static const double consumoPorBombaPorTick = 0.8;
+  static const double consumoPorBombaPorTick = 0.40;
 
   /// RN12: vazao maxima da captacao solar, no pico do dia.
   ///
-  /// Calibrado em um quinto do consumo com as quatro bombas ligadas, ou seja,
-  /// a captacao nunca compensa a irrigacao plena e o reservatorio continua
-  /// caindo ate o bloqueio. Com as bombas paradas ela repoe agua devagar, o
-  /// que e o que permite a liberacao do bloqueio (RN09) acontecer ao vivo.
-  // ponytail: numero de calibragem. Subir se a liberacao demorar demais na
-  // apresentacao, baixar se o bloqueio deixar de acontecer.
-  static const double recargaSolarPico = 0.64;
+  /// Calibrado logo abaixo do consumo com as quatro bombas ligadas, que e
+  /// 4 x 0,40 = 1,60. No pico do sol, portanto, irrigar tudo ao mesmo tempo
+  /// ainda derruba o reservatorio, e o bloqueio continua sendo possivel.
+  ///
+  /// Mas a captacao e nula a noite e a irrigacao e intermitente, entao na media
+  /// do dia ela cobre a manutencao dos quatro talhoes: a fazenda se paga sem
+  /// deixar de ser vulneravel a irrigacao plena. O T13 prova esse equilibrio.
+  // ponytail: numero de calibragem. Subir se o sistema nao se recuperar depois
+  // do bloqueio, baixar se o bloqueio deixar de acontecer.
+  static const double recargaSolarPico = 1.5;
 
   /// Quanto o relogio da fazenda avanca a cada ciclo. Um dia inteiro leva 96
   /// ciclos, cerca de meio minuto no modo demonstracao.

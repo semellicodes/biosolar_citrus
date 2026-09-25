@@ -12,7 +12,7 @@ import '../../../nucleo/tema.dart';
 import 'eventos_bloc.dart';
 
 const _vermelho = Cores.vermelho;
-const _azul = Color(0xFF4EA8F5);
+const _azul = Color(0xFF1B5FA8);
 const _amarelo = Cores.ambar;
 const _cinza = Cores.textoSecundario;
 
@@ -155,8 +155,8 @@ class _Linha extends StatelessWidget {
             ),
             child: Text(
               doSistema ? 'Sistema' : 'Operador',
-              style: Fontes.corpo(doSistema ? Cores.fundo : _cinza,
-                  tamanho: 10),
+              style: Fontes.corpo(doSistema ? Colors.white : _cinza,
+                  tamanho: 11),
             ),
           ),
         ],

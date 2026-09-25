@@ -89,10 +89,40 @@ void main() {
     );
 
     final depois = atualizarSensores(quatroBombas, agora);
-    expect(depois.reservatorio.nivel, lessThan(80));
+    expect(depois.reservatorio.nivel, lessThan(80),
+        reason: 'com tudo ligado o nivel cai mesmo no pico do sol');
     expect(Limiares.recargaSolarPico,
-        closeTo(4 * Limiares.consumoPorBombaPorTick / 5, 0.001),
-        reason: 'captacao calibrada em um quinto do consumo com carga total');
+        lessThan(4 * Limiares.consumoPorBombaPorTick),
+        reason: 'a captacao no pico nao cobre a irrigacao plena, entao o '
+            'bloqueio continua sendo alcancavel');
+  });
+
+  test('T13 RN12: na media do dia a captacao cobre a manutencao dos talhoes',
+      () {
+    // Este e o teste que separa escassez de colapso. A captacao no pico perde
+    // para quatro bombas, mas a irrigacao e intermitente: em regime, cada
+    // talhao precisa de bomba durante queda / (ganho + queda) do tempo. Se a
+    // captacao media do dia nao cobrir isso, todos os talhoes acabam presos em
+    // estado critico depois do primeiro bloqueio, que foi o que aconteceu com a
+    // calibragem anterior.
+    const ciclosDeSol = 48; // das 6h as 18h, a 0,25h por ciclo
+    const ciclosDoDia = 96;
+    const mediaDoSeno = 2 / 3.14159265; // media de sin sobre meio periodo
+
+    final captacaoPorDia =
+        Limiares.recargaSolarPico * mediaDoSeno * ciclosDeSol;
+
+    final fracaoIrrigando = Limiares.quedaUmidadePorTick /
+        (Limiares.ganhoUmidadePorTick + Limiares.quedaUmidadePorTick);
+    final consumoPorDia = 4 *
+        fracaoIrrigando *
+        Limiares.consumoPorBombaPorTick *
+        ciclosDoDia;
+
+    expect(captacaoPorDia, greaterThan(consumoPorDia),
+        reason: 'captacao de ${captacaoPorDia.toStringAsFixed(1)} pontos por '
+            'dia contra consumo de manutencao de '
+            '${consumoPorDia.toStringAsFixed(1)}');
   });
 
   test('T12 RN05: irrigacao manual acima do patamar gera alerta sem desligar',

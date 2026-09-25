@@ -7,29 +7,38 @@ import '../dominio/repositorio_fazenda.dart';
 
 /// Estado inicial da fazenda demonstrada.
 ///
-/// O Talhao 3 comeca proximo do gatilho de proposito, para que o primeiro
-/// cenario da apresentacao (irrigacao automatica) apareca em poucos ciclos.
+/// A fazenda comeca em estiagem: reservatorio baixo e os quatro talhoes ja
+/// abaixo ou rente ao gatilho critico. Isso faz as quatro bombas ligarem de
+/// saida, o reservatorio despencar e o bloqueio acontecer nos primeiros ciclos,
+/// e e o que da os tres cenarios da apresentacao em menos de um minuto, sem
+/// precisar do modo demonstracao. Depois do bloqueio a captacao solar assume e
+/// o sistema se estabiliza sozinho.
+///
+/// O relogio comeca de madrugada de proposito: as bombas ligam sem sol nenhum
+/// para repor a agua, o que e o que faz o reservatorio chegar ao bloqueio. O
+/// amanhecer logo depois e o que traz a fazenda de volta, e isso e a RN12
+/// aparecendo na narrativa em vez de so na tabela.
 Telemetria estadoInicial(DateTime agora) => Telemetria(
       reservatorio: const Reservatorio(
-          nivel: 70, capacidadeLitros: 50000, bloqueioAtivo: false),
+          nivel: 26, capacidadeLitros: 50000, bloqueioAtivo: false),
       talhoes: const [
         Talhao(
             id: 't1',
             nome: 'Talhão Norte',
             cultura: 'Laranja Pera',
-            umidade: 58),
+            umidade: 24),
         Talhao(
-            id: 't2', nome: 'Talhão Leste', cultura: 'Limão Taiti', umidade: 41),
+            id: 't2', nome: 'Talhão Leste', cultura: 'Limão Taiti', umidade: 22),
         Talhao(
             id: 't3',
             nome: 'Talhão Sul',
             cultura: 'Laranja Valência',
-            umidade: 30),
+            umidade: 20),
         Talhao(
             id: 't4',
             nome: 'Talhão Oeste',
             cultura: 'Limão Siciliano',
-            umidade: 62),
+            umidade: 26),
       ],
       bombas: const [
         Bomba(id: 'b1', talhaoId: 't1', ligada: false),
@@ -38,6 +47,7 @@ Telemetria estadoInicial(DateTime agora) => Telemetria(
         Bomba(id: 'b4', talhaoId: 't4', ligada: false),
       ],
       hora: agora,
+      horaSimulada: 3,
     );
 
 class RepositorioMemoria implements RepositorioFazenda {

@@ -1,7 +1,8 @@
 /// Tokens do painel. Cor, espaço, raio e tipografia vivem só aqui.
 ///
-/// Sala de controle, não produto de consumo: estados dessaturados, raio curto,
-/// caixa alta apenas em título de seção.
+/// Pensado para uso em campo: o produtor lê no sol, de relance e com uma mão.
+/// Isso manda fundo claro, contraste alto, texto grande e alvo de toque grande,
+/// que é o oposto do painel escuro de sala de controle.
 library;
 
 import 'package:compartilhado/modelos.dart';
@@ -24,25 +25,25 @@ abstract final class Raio {
 }
 
 abstract final class Cores {
-  static const Color fundo = Color(0xFF0D1117);
-  static const Color superficie = Color(0xFF12171F);
+  static const Color fundo = Color(0xFFF4F6F3);
+  static const Color superficie = Color(0xFFFFFFFF);
 
-  /// Um tom acima da superfície, para faixas e realces discretos.
-  static const Color superficieAlta = Color(0xFF1A212B);
-  static const Color borda = Color(0xFF1F2630);
+  /// Um tom abaixo da superfície, para faixas e realces.
+  static const Color superficieAlta = Color(0xFFEBEEE8);
+  static const Color borda = Color(0xFFDCE0D8);
 
-  /// Cinza de gráfico. A cor de borda desaparece sobre a superfície do card, e
-  /// uma barra que não se distingue do fundo não informa nada.
-  static const Color grafico = Color(0xFF39434F);
+  /// Cinza de gráfico, com contraste suficiente sobre a superfície branca.
+  static const Color grafico = Color(0xFFC3CABE);
 
-  static const Color texto = Color(0xFFE6EDF3);
-  static const Color textoSecundario = Color(0xFF8B949E);
-  static const Color textoTerciario = Color(0xFF6E7681);
+  static const Color texto = Color(0xFF161C18);
+  static const Color textoSecundario = Color(0xFF4A554E);
+  static const Color textoTerciario = Color(0xFF6B756E);
 
-  /// Estados dessaturados. Neon é metade da cara de template.
-  static const Color verde = Color(0xFF3FB950);
-  static const Color ambar = Color(0xFFD29922);
-  static const Color vermelho = Color(0xFFF85149);
+  /// Escuras o bastante para sobreviver ao sol batendo na tela: tom claro de
+  /// estado sobre fundo claro some lá fora.
+  static const Color verde = Color(0xFF16803C);
+  static const Color ambar = Color(0xFF9A5B00);
+  static const Color vermelho = Color(0xFFBC1C13);
 
   static Color da(Faixa faixa) => switch (faixa) {
         Faixa.verde => verde,
@@ -50,11 +51,12 @@ abstract final class Cores {
         Faixa.vermelho => vermelho,
       };
 
-  /// Opacidade da temperatura ambiente da tela por estado (item 9).
+  /// Temperatura ambiente da tela por estado. Discreta em fundo claro, onde
+  /// uma lavada de cor forte atrapalha a leitura em vez de ajudar.
   static double brilhoDa(Faixa faixa) => switch (faixa) {
         Faixa.verde => 0,
-        Faixa.amarelo => 0.04,
-        Faixa.vermelho => 0.08,
+        Faixa.amarelo => 0.05,
+        Faixa.vermelho => 0.10,
       };
 }
 
@@ -74,20 +76,20 @@ abstract final class Fontes {
         fontSize: tamanho,
         height: 1,
         color: cor,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         letterSpacing: -tamanho * 0.025,
         fontFeatures: _tabular,
       );
 
   /// Única caixa alta do aplicativo: título de seção.
   static TextStyle secao() => GoogleFonts.inter(
-        fontSize: 11,
+        fontSize: 13,
         color: Cores.textoTerciario,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.8,
       );
 
-  static TextStyle titulo(Color cor, {double tamanho = 15}) =>
+  static TextStyle titulo(Color cor, {double tamanho = 18}) =>
       GoogleFonts.inter(
         fontSize: tamanho,
         color: cor,
@@ -95,7 +97,7 @@ abstract final class Fontes {
         letterSpacing: -0.1,
       );
 
-  static TextStyle corpo(Color cor, {double tamanho = 13}) => GoogleFonts.inter(
+  static TextStyle corpo(Color cor, {double tamanho = 15}) => GoogleFonts.inter(
         fontSize: tamanho,
         color: cor,
         height: 1.35,
@@ -104,7 +106,7 @@ abstract final class Fontes {
 }
 
 ThemeData construirTema() {
-  final base = ThemeData.dark(useMaterial3: true);
+  final base = ThemeData.light(useMaterial3: true);
   return base.copyWith(
     scaffoldBackgroundColor: Cores.fundo,
     colorScheme: base.colorScheme.copyWith(
@@ -116,6 +118,7 @@ ThemeData construirTema() {
     dividerColor: Cores.borda,
     appBarTheme: const AppBarTheme(
       backgroundColor: Cores.fundo,
+      foregroundColor: Cores.texto,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
     ),
@@ -156,14 +159,18 @@ class PontoEstado extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 14,
+            height: 14,
             decoration:
                 BoxDecoration(color: Cores.da(faixa), shape: BoxShape.circle),
           ),
           const SizedBox(width: Espaco.p),
+          // Crítico chega com peso maior, porque é o que precisa ser visto de
+          // relance e de longe.
           Text(texto ?? rotulos[faixa]!,
-              style: Fontes.corpo(Cores.textoSecundario)),
+              style: Fontes.titulo(
+                  faixa == Faixa.vermelho ? Cores.da(faixa) : Cores.texto,
+                  tamanho: 17)),
         ],
       );
 }
@@ -193,7 +200,7 @@ class ParDado extends StatelessWidget {
 /// Barra de nível. Fina, sem brilho e sem raio grande.
 class BarraNivel extends StatelessWidget {
   const BarraNivel(
-      {required this.fracao, required this.cor, this.altura = 4, super.key});
+      {required this.fracao, required this.cor, this.altura = 10, super.key});
 
   final double fracao;
   final Color cor;
@@ -217,12 +224,13 @@ class BarraNivel extends StatelessWidget {
       );
 }
 
-/// Interruptor próprio, no lugar do Switch do Material.
+/// Botão de acionamento, no lugar do Switch do Material.
 ///
-/// É o único elemento que a banca vai tocar, então ele diz em palavras em que
-/// estado está, e quando o bloqueio trava a operação mostra cadeado em vez de
-/// ficar apenas cinza, que é como um Switch desabilitado se parece com um
-/// Switch qualquer.
+/// Feito para ser tocado com uma mão, de pé no meio do pomar: ocupa a largura
+/// do cartão, tem 56 pixels de altura e o rótulo diz a ação que vai acontecer,
+/// não o estado, porque o estado já está escrito acima dele. Durante o bloqueio
+/// mostra cadeado, em vez de ficar apenas cinza, que é como um Switch
+/// desabilitado se parece com um Switch qualquer.
 class Interruptor extends StatelessWidget {
   const Interruptor({
     required this.ligado,
@@ -235,63 +243,55 @@ class Interruptor extends StatelessWidget {
   final bool travado;
   final ValueChanged<bool> aoAlternar;
 
+  /// Alvo de toque confortável de luva, e bem acima dos 48 recomendados.
+  static const double altura = 56;
+
   @override
   Widget build(BuildContext context) {
-    // Sem pílula: cadeado e a palavra, como o estado ao lado. O que comunica
-    // aqui é o ícone e o texto, não uma caixa em volta deles.
     if (travado) {
-      return Row(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.lock_outline, size: 13, color: Cores.textoTerciario),
-        const SizedBox(width: Espaco.p - 2),
-        Text('Travado',
-            style: Fontes.corpo(Cores.textoTerciario, tamanho: 12)),
-      ]);
+      return Container(
+        height: altura,
+        decoration: BoxDecoration(
+          color: Cores.superficieAlta,
+          borderRadius: BorderRadius.circular(Raio.interno),
+          border: Border.all(color: Cores.borda),
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          const Icon(Icons.lock_outline, size: 20, color: Cores.textoSecundario),
+          const SizedBox(width: Espaco.p),
+          Text('Travado pelo bloqueio',
+              style: Fontes.titulo(Cores.textoSecundario, tamanho: 17)),
+        ]),
+      );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: Cores.fundo,
-        borderRadius: BorderRadius.circular(Raio.interno),
-        border: Border.all(color: Cores.borda),
+    // Ligar e a acao de destaque, entao ela vem solida. Desligar e a acao de
+    // recuo, entao vem contornada: as duas com o mesmo tamanho de alvo.
+    return GestureDetector(
+      onTap: () => aoAlternar(!ligado),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: altura,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: ligado ? Cores.superficie : Cores.verde,
+          borderRadius: BorderRadius.circular(Raio.interno),
+          border: Border.all(
+              color: ligado ? Cores.textoSecundario : Cores.verde,
+              width: 2),
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(ligado ? Icons.stop_circle_outlined : Icons.water_drop,
+              size: 22,
+              color: ligado ? Cores.texto : Colors.white),
+          const SizedBox(width: Espaco.p),
+          Text(ligado ? 'Desligar irrigação' : 'Ligar irrigação',
+              style: Fontes.titulo(ligado ? Cores.texto : Colors.white,
+                  tamanho: 18)),
+        ]),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        _Lado('Desligado',
-            ativo: !ligado,
-            cor: Cores.textoSecundario,
-            aoTocar: () => aoAlternar(false)),
-        _Lado('Ligado',
-            ativo: ligado, cor: Cores.verde, aoTocar: () => aoAlternar(true)),
-      ]),
     );
   }
-}
-
-class _Lado extends StatelessWidget {
-  const _Lado(this.texto,
-      {required this.ativo, required this.cor, required this.aoTocar});
-
-  final String texto;
-  final bool ativo;
-  final Color cor;
-  final VoidCallback aoTocar;
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-        onTap: ativo ? null : aoTocar,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(
-              horizontal: Espaco.p + 2, vertical: Espaco.xs),
-          decoration: BoxDecoration(
-            color: ativo ? cor.withValues(alpha: 0.14) : Colors.transparent,
-            borderRadius: BorderRadius.circular(Raio.interno - 2),
-          ),
-          child: Text(texto,
-              style: Fontes.corpo(ativo ? cor : Cores.textoTerciario,
-                  tamanho: 12)),
-        ),
-      );
 }
 
 /// Seletor segmentado próprio.
