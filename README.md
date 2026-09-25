@@ -232,29 +232,86 @@ vira estado carregado, a perda de contato nao apaga a ultima leitura conhecida,
 a leitura seguinte reconecta a tela sozinha, e a recusa do servidor chega a
 interface com a mensagem original.
 
-## Limitacoes conhecidas
+## Balanco hidrico e regime de escassez
 
-**Irrigacao sem priorizacao.** O sistema trata todos os talhoes com igualdade.
-Quando o bloqueio e liberado, todos os talhoes abaixo do gatilho critico sao
-irrigados ao mesmo tempo, o que consome o reservatorio rapido e pode leva-lo de
-volta ao bloqueio em poucos ciclos. E correto diante das regras escritas, mas
-nao e o ideal em escassez. O proximo passo natural e uma regra de priorizacao
-por criticidade: abaixo de um patamar de conforto do reservatorio, irrigar
-apenas o talhao mais seco por vez. Ela entraria como mais uma funcao no mesmo
-modulo de regras, avaliada antes da irrigacao critica, sem tocar em transporte
-nem em interface.
+O reservatorio opera em deficit, e isso nao e acidente de calibragem: e o
+cenario que o caderno descreve. Durante a estiagem, a demanda de irrigacao de um
+pomar supera com folga o que a captacao solar consegue repor, e a medicao abaixo
+quantifica exatamente isso.
 
-**Pausa noturna da captacao.** A noite a captacao solar e zero e o reservatorio
-fica parado ate o amanhecer simulado. Isso nao e defeito, e o comportamento
-esperado de um sistema movido a sol, e o painel diz isso com todas as letras,
-mostrando "noite, captacao solar parada (0%)". Se a demonstracao cair num
-horario simulado ruim, o botao de reiniciar cenario devolve a fazenda para a
-manha.
+### Os numeros, medidos
 
-**Sem persistencia.** O estado vive na memoria do servidor e o historico tem
-teto de 500 eventos, descartando os mais antigos. Reiniciar o servidor zera a
-simulacao. E uma decisao alinhada ao caderno, que proibe persistencia local e
-nao exige banco de dados.
+Cada talhao precisa de bomba durante 28,6% do tempo para se manter na faixa
+segura, porque a umidade sobe 3,0 por ciclo irrigando e cai 1,2 por ciclo sem
+irrigacao, entao `1,2 / (3,0 + 1,2)`. Com quatro talhoes, isso da 1,14 bombas
+ligadas em media, de forma continua.
+
+| | Calculo | Pontos percentuais por dia |
+| --- | --- | --- |
+| Captacao solar | `0,64 x media do seno x 48 ciclos de sol` | **19,6** |
+| Consumo da irrigacao | `1,14 bombas x 0,8 x 96 ciclos` | **87,8** |
+| Saldo | | **-68,2** |
+
+**O consumo e cerca de 4,5 vezes a captacao.** O unico momento em que o nivel
+sobe e durante o bloqueio, com todas as bombas desligadas, e por isso o sistema
+se estabiliza oscilando entre 13% e 25%: e o unico equilibrio possivel com esta
+fazenda.
+
+Observado em execucao, com a simulacao acelerada:
+
+| Hora simulada | Nivel | Bloqueio | Bombas |
+| --- | --- | --- | --- |
+| 12h | 24,7% | ativo | 0 |
+| 13h | 17,7% | liberado | 4 |
+| 14h | 13,6% | ativo | 0 |
+| 18h as 6h | 18,2% | ativo | 0 |
+| 8h | 19,7% | ativo | 0 |
+
+O bloqueio e liberado quando a captacao leva o nivel aos 25%, as quatro bombas
+ligam de uma vez nos talhoes secos e derrubam onze pontos em uma hora simulada,
+e o bloqueio volta. A noite o nivel fica parado, porque a captacao e solar.
+
+### O que isso quer dizer
+
+**A fazenda e subdimensionada para irrigacao plena.** Dimensionar reservatorio e
+captacao para a demanda do pomar e decisao de projeto agronomico, nao de
+software: envolve area irrigada, cultura, evapotranspiracao local e orcamento de
+painel solar. O papel do sistema de automacao diante de uma fazenda assim e
+exatamente o que ele faz, que e **impedir que o reservatorio zere**, irrigando
+enquanto ha agua e travando tudo quando nao ha.
+
+Uma calibragem alternativa, se o objetivo fosse um cenario que se recupera em
+vez de oscilar, seria mexer no estado inicial em vez das taxas: partir de
+talhoes bem secos para o bloqueio acontecer logo no comeco, e reduzir o consumo
+por bomba para que a fazenda se sustente depois disso. Os numeros atuais foram
+escolhidos para que o bloqueio aconteca de forma confiavel na demonstracao.
+
+### Irrigacao sem priorizacao
+
+O sistema trata todos os talhoes com igualdade, entao quando o bloqueio e
+liberado todos os que estiverem abaixo do gatilho sao irrigados ao mesmo tempo.
+Uma regra de priorizacao por criticidade, irrigando apenas o talhao mais seco
+abaixo de um patamar de conforto, suavizaria a queda e entraria como mais uma
+funcao no mesmo modulo de regras, sem tocar em transporte nem em interface.
+
+Vale a ressalva de que ela **nao elimina o deficit**: como a manutencao dos
+quatro talhoes exige 1,14 bombas em media, uma bomba de cada vez nao da conta do
+pomar inteiro. O problema e de dimensionamento, e a priorizacao trata do
+sintoma.
+
+### Pausa noturna da captacao
+
+A noite a captacao solar e zero e o reservatorio fica parado ate o amanhecer
+simulado. Nao e defeito, e o comportamento esperado de um sistema movido a sol,
+e o painel diz isso com todas as letras. Se a demonstracao cair num horario
+simulado ruim, o botao de reiniciar cenario devolve a fazenda para a manha.
+
+### Sem persistencia
+
+O estado vive na memoria do servidor e o historico tem teto de 500 eventos,
+descartando os mais antigos. Reiniciar o servidor zera a simulacao. E uma
+decisao alinhada ao caderno, que proibe persistencia local e nao exige banco de
+dados.
 
 ## Evolucao futura
 
