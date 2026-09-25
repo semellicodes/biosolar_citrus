@@ -77,9 +77,9 @@ Decisao avaliarBloqueioHidrico(Telemetria estado, DateTime agora) {
         hora: agora,
         tipo: TipoEvento.bloqueioAtivado,
         origem: Origem.sistema,
-        descricao: 'Bloqueio de emergencia ativado',
-        motivo: 'Reservatorio em ${reservatorio.nivel.toStringAsFixed(1)}%, '
-            'abaixo do limite critico de '
+        descricao: 'Bloqueio de emergência ativado',
+        motivo: 'Reservatório em ${reservatorio.nivel.toStringAsFixed(1)}%, '
+            'abaixo do limite crítico de '
             '${Limiares.reservatorioCritico.toStringAsFixed(0)}%',
       ));
     }
@@ -89,7 +89,7 @@ Decisao avaliarBloqueioHidrico(Telemetria estado, DateTime agora) {
         tipo: TipoEvento.irrigacaoEncerrada,
         origem: Origem.sistema,
         descricao: 'Bomba ${bomba.id} desligada',
-        motivo: 'Bloqueio de emergencia hidrico',
+        motivo: 'Bloqueio de emergência hídrico',
       ));
     }
     return Decisao(
@@ -114,10 +114,10 @@ Decisao avaliarBloqueioHidrico(Telemetria estado, DateTime agora) {
       hora: agora,
       tipo: TipoEvento.bloqueioLiberado,
       origem: Origem.sistema,
-      descricao: 'Bloqueio de emergencia liberado',
-      motivo: 'Reservatorio recuperou para '
+      descricao: 'Bloqueio de emergência liberado',
+      motivo: 'Reservatório recuperou para '
           '${reservatorio.nivel.toStringAsFixed(1)}%, acima do patamar de '
-          'seguranca de ${Limiares.reservatorioSeguro.toStringAsFixed(0)}%',
+          'segurança de ${Limiares.reservatorioSeguro.toStringAsFixed(0)}%',
     ));
     return Decisao(
       estado.copiarCom(
@@ -150,9 +150,9 @@ Decisao avaliarIrrigacaoCritica(Telemetria estado, DateTime agora) {
         hora: agora,
         tipo: TipoEvento.irrigacaoIniciada,
         origem: Origem.sistema,
-        descricao: 'Irrigacao iniciada em ${talhao.nome}',
+        descricao: 'Irrigação iniciada em ${talhao.nome}',
         motivo: 'Umidade em ${talhao.umidade.toStringAsFixed(1)}%, abaixo do '
-            'gatilho critico de '
+            'gatilho crítico de '
             '${Limiares.umidadeCritica.toStringAsFixed(0)}%',
       ));
       bombas.add(
@@ -176,7 +176,7 @@ Decisao avaliarIrrigacaoCritica(Telemetria estado, DateTime agora) {
           talhao.umidade - Limiares.ganhoUmidadePorTick <
               Limiares.umidadeSegura) {
         eventos.add(_alertaDesperdicio(talhao, agora,
-            'e a irrigacao manual continua ligada'));
+            'e a irrigação manual continua ligada'));
       }
       bombas.add(bomba);
       continue;
@@ -190,8 +190,8 @@ Decisao avaliarIrrigacaoCritica(Telemetria estado, DateTime agora) {
         hora: agora,
         tipo: TipoEvento.irrigacaoEncerrada,
         origem: Origem.sistema,
-        descricao: 'Irrigacao encerrada em ${talhao.nome}',
-        motivo: 'Umidade atingiu o patamar de seguranca de '
+        descricao: 'Irrigação encerrada em ${talhao.nome}',
+        motivo: 'Umidade atingiu o patamar de segurança de '
             '${Limiares.umidadeSegura.toStringAsFixed(0)}%',
       ));
       bombas.add(bomba.copiarCom(ligada: false));
@@ -209,9 +209,9 @@ Evento _alertaDesperdicio(Talhao talhao, DateTime agora, String complemento) =>
       hora: agora,
       tipo: TipoEvento.alertaDesperdicio,
       origem: Origem.sistema,
-      descricao: 'Desperdicio em ${talhao.nome}',
+      descricao: 'Desperdício em ${talhao.nome}',
       motivo: 'Umidade em ${talhao.umidade.toStringAsFixed(1)}% ja passou do '
-          'patamar de seguranca de '
+          'patamar de segurança de '
           '${Limiares.umidadeSegura.toStringAsFixed(0)}% $complemento',
     );
 
@@ -241,9 +241,9 @@ Decisao avaliarComandoManual(
   DateTime agora,
 ) {
   if (ligar && estado.reservatorio.bloqueioAtivo) {
-    final motivo = 'Bloqueio de emergencia ativo: reservatorio em '
+    final motivo = 'Bloqueio de emergência ativo: reservatório em '
         '${estado.reservatorio.nivel.toStringAsFixed(1)}%. Nenhuma bomba pode '
-        'ser acionada ate o nivel voltar acima de '
+        'ser acionada até o nível voltar acima de '
         '${Limiares.reservatorioSeguro.toStringAsFixed(0)}%.';
     return Decisao(
       estado,
@@ -279,7 +279,7 @@ Decisao avaliarComandoManual(
         estado.talhoes.where((t) => t.id == bomba?.talhaoId).firstOrNull;
     if (talhao != null && talhao.umidade >= Limiares.umidadeSegura) {
       eventos.add(_alertaDesperdicio(
-          talhao, agora, 'e o operador ligou a irrigacao mesmo assim'));
+          talhao, agora, 'e o operador ligou a irrigação mesmo assim'));
     }
   }
 

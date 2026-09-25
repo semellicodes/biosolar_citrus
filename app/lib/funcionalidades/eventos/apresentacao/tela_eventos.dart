@@ -1,7 +1,7 @@
-/// Historico de decisoes.
+/// Histórico de decisões.
 ///
-/// A lista e o print que prova a autonomia: no modo demonstracao ela enche de
-/// eventos do sistema sem ninguem tocar em nada.
+/// A lista é o print que prova a autonomia: no modo demonstração ela enche de
+/// eventos do sistema sem ninguém tocar em nada.
 library;
 
 import 'package:compartilhado/modelos.dart';
@@ -16,7 +16,7 @@ const _azul = Color(0xFF4EA8F5);
 const _amarelo = Cores.ambar;
 const _cinza = Cores.textoFraco;
 
-/// Cor e icone por tipo, para achar o bloqueio no meio da lista sem ler.
+/// Cor e ícone por tipo, para achar o bloqueio no meio da lista sem ler.
 ({Color cor, IconData icone}) _aparencia(TipoEvento tipo) => switch (tipo) {
       TipoEvento.bloqueioAtivado => (cor: _vermelho, icone: Icons.block),
       // A recusa e consequencia direta do bloqueio e e a prova de que a regra
@@ -53,7 +53,7 @@ class TelaEventos extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Historico de decisoes',
+        title: Text('Histórico de decisões',
             style: Fontes.titulo(Cores.texto, tamanho: 18)),
         iconTheme: const IconThemeData(color: Cores.textoFraco),
       ),
@@ -95,7 +95,7 @@ class TelaEventos extends StatelessWidget {
             Expanded(
               child: visiveis.isEmpty
                   ? Center(
-                      child: Text('Nenhuma decisao registrada ainda.',
+                      child: Text('Nenhuma decisão registrada ainda.',
                           style: Fontes.corpo(_cinza)))
                   // Construcao sob demanda: a lista cresce durante a sessao.
                   : ListView.separated(

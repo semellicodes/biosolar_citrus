@@ -61,7 +61,7 @@ class ServicoSimulacao {
         tipo: TipoEvento.velocidadeAlterada,
         origem: Origem.operador,
         descricao: acelerada
-            ? 'Modo demonstracao ativado'
+            ? 'Modo demonstração ativado'
             : 'Velocidade normal restaurada',
         motivo: 'Ciclo a cada ${_intervalo.inMilliseconds} ms',
       )
@@ -77,8 +77,8 @@ class ServicoSimulacao {
         hora: DateTime.now(),
         tipo: TipoEvento.simulacaoReiniciada,
         origem: Origem.operador,
-        descricao: 'Simulacao reiniciada',
-        motivo: 'Cenario devolvido ao estado inicial',
+        descricao: 'Simulação reiniciada',
+        motivo: 'Cenário devolvido ao estado inicial',
       )
     ]);
   }

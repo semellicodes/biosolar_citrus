@@ -66,6 +66,11 @@ operador:
 
 ![Historico de decisoes](docs/historico.png)
 
+O painel se ajusta a largura disponivel: em celular e coluna unica, acima de
+700 pixels os talhoes viram duas colunas, e acima de 1100 o reservatorio ocupa
+a faixa superior inteira com o arco solar grande e os talhoes vao para tres
+colunas.
+
 ## Regras de negocio
 
 Todas as decisoes vivem em [`servidor/lib/dominio/regras/regras.dart`](servidor/lib/dominio/regras/regras.dart),

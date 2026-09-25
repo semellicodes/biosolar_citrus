@@ -42,8 +42,8 @@ abstract final class Cores {
 /// RNF04: o estado critico e identificavel por texto, nao so por cor.
 const Map<Faixa, String> rotulos = {
   Faixa.verde: 'NORMAL',
-  Faixa.amarelo: 'ATENCAO',
-  Faixa.vermelho: 'CRITICO',
+  Faixa.amarelo: 'ATENÇÃO',
+  Faixa.vermelho: 'CRÍTICO',
 };
 
 /// Numeros que mudam a cada ciclo precisam de largura fixa por algarismo,
@@ -153,7 +153,119 @@ class BarraNivel extends StatelessWidget {
       );
 }
 
-/// Numero grande que troca deslizando, em vez de piscar.
+/// Etiqueta de estado. Fundo levemente tingido da cor do estado, para a faixa
+/// de alerta ser um objeto na tela e nao um texto perdido ao lado do numero.
+class Etiqueta extends StatelessWidget {
+  const Etiqueta(this.texto, this.cor, {this.solida = false, super.key});
+
+  final String texto;
+  final Color cor;
+  final bool solida;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: Espaco.p, vertical: Espaco.xs),
+        decoration: BoxDecoration(
+          color: solida ? cor : cor.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: cor.withValues(alpha: solida ? 1 : 0.35)),
+        ),
+        child: Text(texto,
+            style: Fontes.rotulo(solida ? Cores.fundo : cor)
+                .copyWith(fontSize: 10)),
+      );
+}
+
+/// Interruptor proprio, no lugar do Switch do Material.
+///
+/// E o unico elemento que a banca vai tocar, entao ele diz em palavras em que
+/// estado esta, e quando o bloqueio trava a operacao mostra cadeado em vez de
+/// ficar apenas cinza, que e como um Switch desabilitado se parece com um
+/// Switch qualquer.
+class Interruptor extends StatelessWidget {
+  const Interruptor({
+    required this.ligado,
+    required this.travado,
+    required this.aoAlternar,
+    super.key,
+  });
+
+  final bool ligado;
+  final bool travado;
+  final ValueChanged<bool> aoAlternar;
+
+  @override
+  Widget build(BuildContext context) {
+    if (travado) {
+      return Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: Espaco.m, vertical: Espaco.p),
+        decoration: BoxDecoration(
+          color: Cores.fundo,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Cores.borda),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.lock_outline, size: 13, color: Cores.textoFraco),
+          const SizedBox(width: Espaco.p),
+          Text('TRAVADO', style: Fontes.rotulo(Cores.textoFraco)),
+        ]),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Cores.fundo,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Cores.borda),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        _Lado('DESLIGADO', ativo: !ligado, cor: Cores.textoFraco,
+            aoTocar: () => aoAlternar(false)),
+        _Lado('LIGADO', ativo: ligado, cor: Cores.verde,
+            aoTocar: () => aoAlternar(true)),
+      ]),
+    );
+  }
+}
+
+class _Lado extends StatelessWidget {
+  const _Lado(this.texto,
+      {required this.ativo, required this.cor, required this.aoTocar});
+
+  final String texto;
+  final bool ativo;
+  final Color cor;
+  final VoidCallback aoTocar;
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: ativo ? null : aoTocar,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          padding: const EdgeInsets.symmetric(
+              horizontal: Espaco.m, vertical: Espaco.p - 2),
+          decoration: BoxDecoration(
+            color: ativo ? cor.withValues(alpha: 0.18) : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+                color: ativo ? cor.withValues(alpha: 0.5) : Colors.transparent),
+          ),
+          child: Text(texto,
+              style: Fontes.rotulo(ativo ? cor : Cores.textoFraco)
+                  .copyWith(fontSize: 10)),
+        ),
+      );
+}
+
+/// Número grande que percorre a distância até o valor novo, em vez de trocar.
+///
+/// A primeira versão usava AnimatedSwitcher, mas com cross-fade os dois valores
+/// coexistem por 300ms e o número aparece fantasma a cada ciclo. Interpolar o
+/// próprio número resolve isso e ainda lê melhor: o valor sobe e desce como
+/// telemetria, em vez de pular de um estado para outro.
 class ValorAnimado extends StatelessWidget {
   const ValorAnimado(
       {required this.valor, required this.cor, this.tamanho = 56, super.key});
@@ -163,19 +275,12 @@ class ValorAnimado extends StatelessWidget {
   final double tamanho;
 
   @override
-  Widget build(BuildContext context) => AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        transitionBuilder: (filho, animacao) => FadeTransition(
-          opacity: animacao,
-          child: SlideTransition(
-            position: Tween(begin: const Offset(0, 0.25), end: Offset.zero)
-                .animate(animacao),
-            child: filho,
-          ),
-        ),
-        child: Text(
-          '${valor.toStringAsFixed(1)}%',
-          key: ValueKey(valor.toStringAsFixed(1)),
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+        tween: Tween(begin: valor, end: valor),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOut,
+        builder: (_, atual, _) => Text(
+          '${atual.toStringAsFixed(1)}%',
           style: Fontes.valor(tamanho, cor),
         ),
       );

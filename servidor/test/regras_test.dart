@@ -216,7 +216,7 @@ void main() {
     final decisao = avaliarComandoManual(bloqueada, 'b1', true, agora);
 
     expect(decisao.aceito, isFalse);
-    expect(decisao.motivoRecusa, contains('Bloqueio de emergencia'));
+    expect(decisao.motivoRecusa, contains('Bloqueio de emergência'));
     expect(decisao.telemetria.bombas.single.ligada, isFalse);
     expect(decisao.eventos.single.tipo, TipoEvento.comandoRecusado);
   });

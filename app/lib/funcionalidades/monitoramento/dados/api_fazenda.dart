@@ -79,7 +79,7 @@ class ApiFazenda implements LeitorTelemetria, LeitorEventos, EmissorComando {
     } on FalhaComunicacao {
       rethrow;
     } catch (_) {
-      throw const FalhaComunicacao('Servidor inacessivel.');
+      throw const FalhaComunicacao('Servidor inacessível.');
     }
   }
 
@@ -91,7 +91,7 @@ class ApiFazenda implements LeitorTelemetria, LeitorEventos, EmissorComando {
               body: jsonEncode(corpo))
           .timeout(const Duration(seconds: 5));
     } catch (_) {
-      throw const FalhaComunicacao('Servidor inacessivel.');
+      throw const FalhaComunicacao('Servidor inacessível.');
     }
   }
 }

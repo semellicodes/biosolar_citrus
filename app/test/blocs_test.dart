@@ -82,7 +82,7 @@ void main() {
       bloc.add(const MonitoramentoIniciado());
       await _inscrever();
       fonte.controlador
-          .addError(const FalhaComunicacao('Servidor inacessivel.'));
+          .addError(const FalhaComunicacao('Servidor inacessível.'));
     },
     wait: const Duration(milliseconds: 50),
     expect: () => [
@@ -98,7 +98,7 @@ void main() {
       bloc.add(const MonitoramentoIniciado());
       await _inscrever();
       fonte.controlador
-          .addError(const FalhaComunicacao('Servidor inacessivel.'));
+          .addError(const FalhaComunicacao('Servidor inacessível.'));
       await _inscrever();
       fonte.controlador.add(telemetria);
     },

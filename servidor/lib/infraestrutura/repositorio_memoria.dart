@@ -15,20 +15,20 @@ Telemetria estadoInicial(DateTime agora) => Telemetria(
       talhoes: const [
         Talhao(
             id: 't1',
-            nome: 'Talhao Norte',
+            nome: 'Talhão Norte',
             cultura: 'Laranja Pera',
             umidade: 58),
         Talhao(
-            id: 't2', nome: 'Talhao Leste', cultura: 'Limao Taiti', umidade: 41),
+            id: 't2', nome: 'Talhão Leste', cultura: 'Limão Taiti', umidade: 41),
         Talhao(
             id: 't3',
-            nome: 'Talhao Sul',
-            cultura: 'Laranja Valencia',
+            nome: 'Talhão Sul',
+            cultura: 'Laranja Valência',
             umidade: 30),
         Talhao(
             id: 't4',
-            nome: 'Talhao Oeste',
-            cultura: 'Limao Siciliano',
+            nome: 'Talhão Oeste',
+            cultura: 'Limão Siciliano',
             umidade: 62),
       ],
       bombas: const [
