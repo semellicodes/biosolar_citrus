@@ -7,6 +7,7 @@ import 'package:compartilhado/modelos.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../nucleo/falhas.dart';
+import '../../eventos/dominio/contratos.dart';
 import '../dominio/contratos.dart';
 
 /// O emulador Android nao enxerga localhost do host, ele usa 10.0.2.2. Web,
@@ -16,7 +17,7 @@ import '../dominio/contratos.dart';
 const String enderecoServidor =
     String.fromEnvironment('SERVIDOR', defaultValue: 'http://localhost:8080');
 
-class ApiFazenda implements LeitorTelemetria, EmissorComando {
+class ApiFazenda implements LeitorTelemetria, LeitorEventos, EmissorComando {
   ApiFazenda({http.Client? cliente, this.endereco = enderecoServidor})
       : _cliente = cliente ?? http.Client();
 

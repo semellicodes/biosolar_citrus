@@ -8,7 +8,6 @@ import 'package:compartilhado/modelos.dart';
 
 abstract interface class LeitorTelemetria {
   Future<Telemetria> obterTelemetria();
-  Future<List<Evento>> obterEventos({int limite, int deslocamento});
 }
 
 /// Fonte contínua de telemetria. Quem consome nao sabe nem precisa saber se o
