@@ -219,7 +219,7 @@ class _FundoDoPomar extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            'assets/imagens/fundo-irrigacao.png',
+            'assets/imagens/fundo-irrigacao.jpg',
             fit: BoxFit.cover,
             alignment: Alignment.topCenter,
           ),

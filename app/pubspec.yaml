@@ -76,11 +76,6 @@ flutter:
       fonts:
         - asset: assets/fontes/Coolvetica-Rg.otf
 
-    # So no nome do aplicativo, no cabecalho.
-    - family: MatchaHome
-      fonts:
-        - asset: assets/fontes/MatchaHome.ttf
-
     # Fonte do restante da interface.
     - family: CreatoDisplay
       fonts:

@@ -100,7 +100,7 @@ Três famílias, cada uma com um trabalho:
 
 | Fonte | Onde | Por quê |
 | --- | --- | --- |
-| **Matcha Home** | só no nome do aplicativo | marca, aparece uma vez por tela |
+| **Coolvetica** | só no nome do aplicativo | marca, aparece uma vez por tela |
 | **Creato Display** | todo o resto da interface | texto de leitura, quatro pesos |
 | **Inter** | só nos valores numéricos | **figuras tabulares** |
 
@@ -108,24 +108,42 @@ A Inter fica porque a Creato Display não tem dígitos de largura fixa nem o
 recurso `tabularFigures`. Sem isso, o número grande muda de largura a cada
 atualização e dança horizontalmente na tela, que é exatamente o que faz um
 painel de telemetria parecer instável. Os arquivos das duas primeiras vivem em
-`app/assets/fontes`, junto das licenças, para o aplicativo não depender de rede.
+`app/assets/fontes`, para o aplicativo não depender de rede.
 
 ### Fundo
 
-Uma foto de pomar de citros entra como textura, em `app/assets/imagens`. Ela é
-desenhada cobrindo a tela, fixa, fora da área rolável, e leva desfoque de sigma
-15 aplicado só na imagem, nunca no conteúdo, então o desfoque é calculado uma
-vez e não a cada quadro da rolagem. Por cima vai um véu da cor de fundo do tema
-com opacidade em `_opacidadeDoVeu`, hoje em 0,90.
+Uma foto de irrigação em pomar entra como textura, em `app/assets/imagens`,
+desenhada cobrindo a tela e fixa, fora da área rolável, então não acompanha a
+rolagem. Ela já vem desfocada da origem, o que dispensa filtro em tempo de
+execução: não há desfoque calculado por quadro em lugar nenhum.
 
-Os cartões continuam opacos, com a cor de superfície, então o contraste dos
-números não depende em nada do que está atrás deles. O valor do véu foi escolhido
-medindo o contraste no pior ponto de fundo atrás do texto terciário, que é o de
-menor contraste da tela: 4,40 sem imagem, 3,72 com véu de 0,90, 3,07 com 0,82 e
-2,70 com 0,74. A partir de 0,82 a linha de contexto e o rótulo TALHÕES começam a
-se perder nas partes escuras da foto.
+Por cima vai um véu da cor de fundo do tema, com a opacidade em
+`_opacidadeDoVeu`. Os cartões ficam por cima disso, então o contraste dos
+números não depende do que está atrás deles.
 
-### Por que fundo claro
+A opacidade do véu foi escolhida medindo contraste, não a olho, no pior ponto de
+fundo atrás do texto terciário, que é o de menor contraste da tela e portanto o
+primeiro a sofrer. Com a composição atual, a linha de contexto fica em 4,42 e o
+rótulo TALHÕES em 4,52, ambos acima do mínimo de 4,5 do WCAG AA para o rótulo e
+muito perto dele na linha de contexto. Baixar o véu derruba esses números
+primeiro, então é por eles que se decide o limite.
+
+### Peso dos recursos
+
+Fonte e imagem entram no aplicativo instalado, então valem a mesma atenção que
+código. As imagens são servidas no tamanho em que aparecem, e não no tamanho em
+que saíram da câmera ou do editor:
+
+| Recurso | Tamanho |
+| --- | --- |
+| `fundo-irrigacao.jpg` | 118 KB, 788 x 1400 |
+| `marca-laranja.png` | 118 KB, PNG por causa da transparência |
+| Fontes | 240 KB, cinco arquivos |
+
+O fundo é JPEG porque é foto e fica sob um véu; a marca continua PNG porque
+precisa de fundo transparente. Juntos, os recursos somam menos de meio megabyte.
+
+### Por que fundo claro### Por que fundo claro
 
 Este aplicativo é para o produtor usar no campo, no sol, de relance e com uma
 mão. Isso manda fundo claro, contraste alto, texto grande, alvo de toque grande
