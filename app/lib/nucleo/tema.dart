@@ -267,25 +267,27 @@ class Interruptor extends StatelessWidget {
   final bool travado;
   final ValueChanged<bool> aoAlternar;
 
-  /// Alvo de toque confortável de luva, e bem acima dos 48 recomendados.
-  static const double altura = 56;
+  /// Altura do alvo de toque. Encolheu para o botão parar de competir com o
+  /// número de umidade, que é o elemento mais pesado do cartão, mas fica no
+  /// mínimo de 44 recomendado para toque.
+  static const double altura = 44;
 
   @override
   Widget build(BuildContext context) {
     if (travado) {
       return Container(
         height: altura,
-        padding: const EdgeInsets.symmetric(horizontal: Espaco.g),
+        padding: const EdgeInsets.symmetric(horizontal: Espaco.m),
         decoration: BoxDecoration(
           color: Cores.superficieAlta,
           borderRadius: BorderRadius.circular(Raio.pilula),
           border: Border.all(color: Cores.borda),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.lock_outline, size: 20, color: Cores.textoSecundario),
-          const SizedBox(width: Espaco.p),
+          const Icon(Icons.lock_outline, size: 16, color: Cores.textoSecundario),
+          const SizedBox(width: Espaco.p - 2),
           Text('Travado pelo bloqueio',
-              style: Fontes.titulo(Cores.textoSecundario, tamanho: 17)),
+              style: Fontes.titulo(Cores.textoSecundario, tamanho: 14)),
         ]),
       );
     }
@@ -297,7 +299,7 @@ class Interruptor extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         height: altura,
-        padding: const EdgeInsets.symmetric(horizontal: Espaco.g),
+        padding: const EdgeInsets.symmetric(horizontal: Espaco.m),
         decoration: BoxDecoration(
           color: ligado ? Colors.transparent : Cores.verde,
           borderRadius: BorderRadius.circular(Raio.pilula),
@@ -306,10 +308,10 @@ class Interruptor extends StatelessWidget {
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(ligado ? Icons.stop_circle_outlined : Icons.water_drop,
-              size: 20, color: cor),
-          const SizedBox(width: Espaco.p),
+              size: 16, color: cor),
+          const SizedBox(width: Espaco.p - 2),
           Text(ligado ? 'Desligar irrigação' : 'Acionar irrigação',
-              style: Fontes.titulo(cor, tamanho: 17)),
+              style: Fontes.titulo(cor, tamanho: 14)),
         ]),
       ),
     );
