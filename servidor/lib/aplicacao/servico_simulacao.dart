@@ -8,7 +8,8 @@ import 'dart:async';
 
 import 'package:compartilhado/modelos.dart';
 
-import '../dominio/regras/regras.dart';
+import '../dominio/regras/regras.dart' hide definirChuva;
+import '../dominio/regras/regras.dart' as regras show definirChuva;
 import '../dominio/repositorio_fazenda.dart';
 
 class ServicoSimulacao {
@@ -67,6 +68,15 @@ class ServicoSimulacao {
       )
     ]);
     iniciar();
+  }
+
+  /// RN13: chuva manual. O servico so encaminha o comando para a regra e
+  /// guarda o resultado, como faz com qualquer outra decisao.
+  void definirChuva({required bool chovendo}) {
+    final decisao =
+        regras.definirChuva(_repositorio.telemetria, chovendo, DateTime.now());
+    _repositorio.salvar(decisao.telemetria);
+    _registrar(decisao.eventos);
   }
 
   /// F12.

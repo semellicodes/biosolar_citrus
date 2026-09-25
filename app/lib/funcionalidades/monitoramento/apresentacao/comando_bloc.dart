@@ -29,6 +29,12 @@ class ReinicioSolicitado extends EventoComando {
   const ReinicioSolicitado();
 }
 
+/// RN13.
+class ChuvaSolicitada extends EventoComando {
+  const ChuvaSolicitada({required this.chovendo});
+  final bool chovendo;
+}
+
 sealed class EstadoComando {
   const EstadoComando();
 }
@@ -71,6 +77,12 @@ class ComandoBloc extends Bloc<EventoComando, EstadoComando> {
         await _emissor.definirVelocidade(acelerada: evento.acelerada);
         return null;
       });
+    });
+
+    on<ChuvaSolicitada>((evento, emit) async {
+      emit(const ComandoEnviando());
+      await _executar(
+          emit, () => _emissor.definirChuva(chovendo: evento.chovendo));
     });
 
     on<ReinicioSolicitado>((_, emit) async {

@@ -61,6 +61,16 @@ class ApiFazenda implements LeitorTelemetria, LeitorEventos, EmissorComando {
       _postar('/simulacao/velocidade', {'acelerada': acelerada});
 
   @override
+  Future<Telemetria> definirChuva({required bool chovendo}) async {
+    final resposta = await _postar('/simulacao/chuva', {'chovendo': chovendo});
+    if (resposta.statusCode != 200) {
+      throw FalhaComunicacao('Servidor respondeu ${resposta.statusCode}.');
+    }
+    return Telemetria.fromJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
+
+  @override
   Future<Telemetria> reiniciarSimulacao() async {
     final resposta = await _postar('/simulacao/reset', const {});
     return Telemetria.fromJson(

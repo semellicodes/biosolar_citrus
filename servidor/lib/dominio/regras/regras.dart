@@ -1,4 +1,4 @@
-/// Motor de regras do BioSolar Citrus, RN01 ate RN12.
+/// Motor de regras do BioSolar Citrus, RN01 ate RN13.
 ///
 /// Todas as funcoes aqui sao puras: recebem o estado e devolvem o estado
 /// seguinte junto com os eventos gerados. Nao existe rede, nao existe tela e
@@ -23,7 +23,7 @@ class Decisao {
   bool get aceito => motivoRecusa == null;
 }
 
-/// RN01, RN02, RN03 e RN12: avanco fisico da simulacao.
+/// RN01, RN02, RN03, RN12 e RN13: avanco fisico da simulacao.
 ///
 /// A umidade cai nos talhoes sem aspersor e sobe nos irrigados. O reservatorio
 /// perde agua proporcionalmente ao numero de bombas ligadas e ganha agua pela
@@ -36,9 +36,11 @@ Telemetria atualizarSensores(Telemetria estado, DateTime agora) {
   final talhoes = [
     for (final talhao in estado.talhoes)
       talhao.copiarCom(
-        umidade: estado.bombaDo(talhao.id).ligada
-            ? talhao.umidade + Limiares.ganhoUmidadePorTick // RN02
-            : talhao.umidade - Limiares.quedaUmidadePorTick, // RN01
+        umidade: talhao.umidade +
+            _variacaoDaUmidade(
+              irrigando: estado.bombaDo(talhao.id).ligada,
+              chovendo: estado.chovendo,
+            ),
       ),
   ];
 
@@ -48,14 +50,66 @@ Telemetria atualizarSensores(Telemetria estado, DateTime agora) {
   final bombasLigadas = estado.bombas.where((b) => b.ligada).length;
   final consumo = bombasLigadas * Limiares.consumoPorBombaPorTick;
   final captacao = Limiares.recargaSolarPico * fatorSolar(horaSimulada);
-  final reservatorio =
-      estado.reservatorio.copiarCom(nivel: estado.reservatorio.nivel - consumo + captacao);
+  final chuva = _captacaoDeChuva(estado);
+  final reservatorio = estado.reservatorio
+      .copiarCom(nivel: estado.reservatorio.nivel - consumo + captacao + chuva);
 
   return estado.copiarCom(
     talhoes: talhoes,
     reservatorio: reservatorio,
     hora: agora,
     horaSimulada: horaSimulada,
+  );
+}
+
+/// RN01, RN02 e RN13: quanto a umidade de um talhao muda em um ciclo.
+///
+/// A ordem e de precedencia fisica: aspersor ligado molha mais que chuva, e
+/// chuva molha mais do que o sol seca. Nenhuma regra de decisao passa por aqui;
+/// isto e so o que o mundo faz com o solo.
+double _variacaoDaUmidade({required bool irrigando, required bool chovendo}) {
+  if (irrigando) return Limiares.ganhoUmidadePorTick; // RN02
+  if (chovendo) return Limiares.ganhoChuvaPorTick; // RN13
+  return -Limiares.quedaUmidadePorTick; // RN01
+}
+
+/// RN13: quanto a chuva acrescenta ao reservatorio neste ciclo.
+///
+/// Tem teto: acima de [Limiares.tetoChuvaReservatorio] a chuva nao acrescenta
+/// mais nada, senao alguns segundos de chuva encheriam a fazenda e o cenario
+/// perderia o sentido. A chuva tambem nunca desliga o bloqueio por conta
+/// propria: ela so levanta o nivel, e quem decide liberar continua sendo a
+/// RN09, avaliada no ciclo como sempre foi.
+double _captacaoDeChuva(Telemetria estado) {
+  if (!estado.chovendo) return 0;
+  final espaco =
+      Limiares.tetoChuvaReservatorio - estado.reservatorio.nivel;
+  if (espaco <= 0) return 0;
+  return espaco < Limiares.captacaoChuvaPorTick
+      ? espaco
+      : Limiares.captacaoChuvaPorTick;
+}
+
+/// RN13: liga ou desliga a chuva. E comando de operador, entao o evento sai com
+/// origem de operador, e nenhuma regra de automacao muda de comportamento.
+Decisao definirChuva(Telemetria estado, bool chovendo, DateTime agora) {
+  if (estado.chovendo == chovendo) return Decisao(estado, const []);
+  return Decisao(
+    estado.copiarCom(chovendo: chovendo),
+    [
+      Evento(
+        hora: agora,
+        tipo: chovendo ? TipoEvento.chuvaIniciada : TipoEvento.chuvaEncerrada,
+        origem: Origem.operador,
+        descricao: chovendo ? 'Chuva iniciada' : 'Chuva encerrada',
+        motivo: chovendo
+            ? 'O solo passa a ganhar '
+                '${Limiares.ganhoChuvaPorTick.toStringAsFixed(1)} por ciclo e o '
+                'reservatório recebe chuva até '
+                '${Limiares.tetoChuvaReservatorio.toStringAsFixed(0)}%'
+            : 'O solo volta a secar normalmente',
+      )
+    ],
   );
 }
 

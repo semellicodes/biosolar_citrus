@@ -30,5 +30,8 @@ abstract interface class EmissorComando {
   Future<Telemetria> acionarBomba(String bombaId, {required bool ligar});
 
   Future<void> definirVelocidade({required bool acelerada});
+
+  /// RN13: liga ou desliga a chuva. Comando de operador, como qualquer outro.
+  Future<Telemetria> definirChuva({required bool chovendo});
   Future<Telemetria> reiniciarSimulacao();
 }

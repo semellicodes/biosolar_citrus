@@ -36,6 +36,8 @@ const _cinza = Cores.textoSecundario;
       TipoEvento.comandoAceito => (cor: _cinza, icone: Icons.touch_app),
       TipoEvento.velocidadeAlterada => (cor: _cinza, icone: Icons.fast_forward),
       TipoEvento.simulacaoReiniciada => (cor: _cinza, icone: Icons.restart_alt),
+      TipoEvento.chuvaIniciada => (cor: _azul, icone: Icons.water),
+      TipoEvento.chuvaEncerrada => (cor: _cinza, icone: Icons.water_outlined),
     };
 
 String _hora(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:'

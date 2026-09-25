@@ -19,6 +19,8 @@ enum TipoEvento {
   comandoAceito,
   comandoRecusado,
   alertaDesperdicio,
+  chuvaIniciada,
+  chuvaEncerrada,
   simulacaoReiniciada,
   velocidadeAlterada,
 }
@@ -73,6 +75,19 @@ class Limiares {
 
   static const double amanhecer = 6;
   static const double anoitecer = 18;
+
+  /// RN13: quanto a umidade do solo sobe por ciclo enquanto chove, em talhao
+  /// sem aspersor. Menor que o ganho da irrigacao de proposito: chuva molha o
+  /// pomar, nao substitui o sistema.
+  static const double ganhoChuvaPorTick = 1.5;
+
+  /// RN13: quanto o reservatorio recebe de chuva por ciclo.
+  static const double captacaoChuvaPorTick = 1.2;
+
+  /// RN13: teto da captacao de chuva. Acima disto a chuva nao acrescenta mais
+  /// nada ao reservatorio, senao alguns segundos de chuva encheriam a fazenda
+  /// e o cenario perderia o sentido.
+  static const double tetoChuvaReservatorio = 70;
 }
 
 /// Intensidade da geracao solar em uma hora do dia, de 0 a 1.
@@ -255,6 +270,7 @@ class Telemetria {
     required this.bombas,
     required this.hora,
     this.horaSimulada = Limiares.amanhecer,
+    this.chovendo = false,
   });
 
   final Reservatorio reservatorio;
@@ -271,6 +287,10 @@ class Telemetria {
 
   double get fatorSolarAtual => fatorSolar(horaSimulada);
 
+  /// RN13: chuva ligada pelo operador. Nao desliga nenhuma regra, apenas muda
+  /// o que a fisica do ciclo faz com a umidade e com o reservatorio.
+  final bool chovendo;
+
   Bomba bombaDo(String talhaoId) =>
       bombas.firstWhere((b) => b.talhaoId == talhaoId);
 
@@ -280,6 +300,7 @@ class Telemetria {
     List<Bomba>? bombas,
     DateTime? hora,
     double? horaSimulada,
+    bool? chovendo,
   }) =>
       Telemetria(
         reservatorio: reservatorio ?? this.reservatorio,
@@ -287,6 +308,7 @@ class Telemetria {
         bombas: bombas ?? this.bombas,
         hora: hora ?? this.hora,
         horaSimulada: horaSimulada ?? this.horaSimulada,
+        chovendo: chovendo ?? this.chovendo,
       );
 
   factory Telemetria.fromJson(Map<String, dynamic> json) => Telemetria(
@@ -301,6 +323,7 @@ class Telemetria {
         hora: DateTime.parse(json['hora'] as String),
         horaSimulada: (json['horaSimulada'] as num?)?.toDouble() ??
             Limiares.amanhecer,
+        chovendo: json['chovendo'] as bool? ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -310,5 +333,6 @@ class Telemetria {
         'hora': hora.toIso8601String(),
         'horaSimulada': horaSimulada,
         'fatorSolar': fatorSolarAtual,
+        'chovendo': chovendo,
       };
 }

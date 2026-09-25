@@ -97,6 +97,7 @@ funcione e não está no enunciado.
 | RN10 | Faixas de alerta | verde, amarelo e vermelho, com rótulo escrito junto da cor | Caderno, fronteiras decididas aqui |
 | RN11 | Origem do evento | todo evento identifica se foi operador ou sistema | Decisão de projeto |
 | RN12 | Captação solar | vazão que acompanha a curva do sol, nula à noite, no pico valendo um quinto do consumo com as quatro bombas ligadas | Decisão de projeto |
+| RN13 | Chuva manual | enquanto ligada, o solo ganha 1,5 por ciclo sem aspersor e o reservatório recebe 1,2 por ciclo até o teto de 70% | Decisão de projeto |
 
 O caderno define os dois limiares que importam, 25% de umidade e 15% de
 reservatório. Todo o resto, as taxas de queda e recuperação, o consumo por
@@ -115,6 +116,25 @@ caindo até o bloqueio como o caderno espera. Com as bombas paradas ela repõe
 água devagar, e é isso que faz a liberação acontecer ao vivo na demonstração. O
 valor de calibragem é `Limiares.recargaSolarPico`.
 
+### RN13, modo de chuva
+
+Serve para demonstrar o sistema sob outra condição sem mexer em nenhuma regra.
+Enquanto a chuva está ligada, o solo de todos os talhões sobe 1,5 por ciclo em
+vez de secar, e o reservatório recebe 1,2 por ciclo **até o teto de 70%**, para
+que alguns segundos de chuva não encham a fazenda e esvaziem o cenário.
+
+O que não muda é o mais importante. A irrigação crítica abaixo de 25% continua
+valendo durante a chuva, ela apenas não costuma disparar porque o solo não seca;
+se ainda assim um talhão cruzar o gatilho, o aspersor liga. O bloqueio de
+emergência e a precedência da RN07 seguem intactos, e se a chuva levar o
+reservatório até o patamar da RN09 durante um bloqueio, o bloqueio é liberado
+pela regra de sempre, sem nenhum caminho especial. Medido em execução: com o
+reservatório em 14,4% e bloqueado, a chuva o levou aos 26,6% e a RN09 liberou
+sozinha em 16 segundos.
+
+Início e fim da chuva entram no histórico com origem de operador, porque é
+comando de operador.
+
 ### Contrato da API
 
 | Rota | Para que serve |
@@ -123,6 +143,7 @@ valor de calibragem é `Limiares.recargaSolarPico`.
 | `POST /bombas/acionar` | `{"bombaId":"b1","ligar":true}`. Responde **409** durante o bloqueio, com o motivo |
 | `GET /eventos?limite=&deslocamento=` | Histórico de decisões, paginado |
 | `POST /simulacao/velocidade` | `{"acelerada":true}` liga o modo demonstração |
+| `POST /simulacao/chuva` | `{"chovendo":true}` liga o modo chuva |
 | `POST /simulacao/reset` | Devolve a simulação ao estado inicial |
 | `WS /stream` | Empurra a telemetria a cada ciclo |
 
@@ -202,7 +223,7 @@ Dois detalhes que valem apontar:
 
 ## Testes
 
-Dezesseis testes no total, executados a cada envio pela rotina de integração
+Dezessete testes no total, executados a cada envio pela rotina de integração
 contínua em [`.github/workflows/ci.yaml`](.github/workflows/ci.yaml). As regras
 são funções puras, então os testes mais importantes do projeto são também os
 mais simples de escrever, sem nenhum objeto falso e sem subir servidor.
@@ -232,6 +253,7 @@ do repositório:
 | T10 | Todo evento identifica corretamente a origem | RN11 |
 | T11 | A captação solar segue a curva do sol e nunca compensa a irrigação plena | RN12 |
 | T12 | A irrigação manual acima do patamar alerta sem desligar, e alerta uma vez só | RN05 |
+| T13 | Durante a chuva o solo sobe sem bomba, e a irrigação crítica continua valendo | RN13 |
 
 O **T07 é o mais valioso da suíte**, porque documenta a precedência entre as duas
 regras críticas do desafio, que é o ponto onde a maioria das implementações

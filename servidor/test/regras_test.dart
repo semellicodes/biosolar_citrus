@@ -238,6 +238,59 @@ void main() {
     expect(decisao.eventos.single.tipo, TipoEvento.bloqueioLiberado);
   });
 
+  test('T13 RN13: durante a chuva o solo sobe sem bomba, e a irrigacao '
+      'critica continua valendo', () {
+    // A chuva nao desliga nada: ela muda o que a fisica faz com o solo, e as
+    // regras de decisao continuam sendo avaliadas do mesmo jeito.
+    final chovendo =
+        fazenda(umidade: 30, nivel: 60).copiarCom(chovendo: true);
+
+    // Sobe sem nenhuma bomba ligada, e menos do que subiria irrigando.
+    final depois = atualizarSensores(chovendo, agora);
+    expect(depois.bombas.single.ligada, isFalse);
+    expect(depois.talhoes.single.umidade,
+        closeTo(30 + Limiares.ganhoChuvaPorTick, 0.001));
+    expect(Limiares.ganhoChuvaPorTick,
+        lessThan(Limiares.ganhoUmidadePorTick),
+        reason: 'chuva molha o pomar, nao substitui o aspersor');
+
+    // O reservatorio recebe chuva, respeitando o teto.
+    expect(depois.reservatorio.nivel,
+        closeTo(60 + Limiares.captacaoChuvaPorTick, 0.001));
+    final quaseCheio = fazenda(nivel: Limiares.tetoChuvaReservatorio - 0.3)
+        .copiarCom(chovendo: true);
+    expect(atualizarSensores(quaseCheio, agora).reservatorio.nivel,
+        closeTo(Limiares.tetoChuvaReservatorio, 0.001),
+        reason: 'a chuva para no teto em vez de encher a fazenda');
+
+    // RN04 continua valendo: se mesmo chovendo um talhao estiver abaixo do
+    // gatilho, o aspersor e acionado.
+    final secoNaChuva =
+        fazenda(umidade: 10, nivel: 60).copiarCom(chovendo: true);
+    final decisao = avaliarIrrigacaoCritica(secoNaChuva, agora);
+    expect(decisao.telemetria.bombas.single.ligada, isTrue);
+    expect(decisao.eventos.single.tipo, TipoEvento.irrigacaoIniciada);
+
+    // RN07 continua tendo precedencia: com o reservatorio critico, chuva
+    // nenhuma faz uma bomba ligar.
+    final bloqueado =
+        fazenda(umidade: 10, nivel: 12).copiarCom(chovendo: true);
+    final ciclo = executarCiclo(bloqueado, agora);
+    expect(ciclo.telemetria.reservatorio.bloqueioAtivo, isTrue);
+    expect(ciclo.telemetria.bombas.single.ligada, isFalse);
+
+    // O comando e do operador e aparece no historico como tal (RN11).
+    final ligou = definirChuva(fazenda(), true, agora);
+    expect(ligou.telemetria.chovendo, isTrue);
+    expect(ligou.eventos.single.tipo, TipoEvento.chuvaIniciada);
+    expect(ligou.eventos.single.origem, Origem.operador);
+    expect(definirChuva(ligou.telemetria, true, agora).eventos, isEmpty,
+        reason: 'ligar de novo o que ja esta ligado nao gera evento');
+    final desligou = definirChuva(ligou.telemetria, false, agora);
+    expect(desligou.telemetria.chovendo, isFalse);
+    expect(desligou.eventos.single.tipo, TipoEvento.chuvaEncerrada);
+  });
+
   test('T10 RN11: todo evento identifica se a origem foi operador ou sistema',
       () {
     // Solo seco de proposito: aqui interessa so a origem do comando, sem o

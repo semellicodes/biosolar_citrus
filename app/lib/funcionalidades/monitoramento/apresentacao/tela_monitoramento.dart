@@ -116,6 +116,9 @@ class _Painel extends StatelessWidget {
                               const VelocidadeSolicitada(acelerada: false)),
                           aoReiniciar: () =>
                               comandos.add(const ReinicioSolicitado()),
+                          chovendo: telemetria.chovendo,
+                          aoAlternarChuva: () => comandos.add(ChuvaSolicitada(
+                              chovendo: !telemetria.chovendo)),
                         ),
                         const SizedBox(height: Espaco.g),
 
@@ -199,6 +202,8 @@ class _Topo extends StatelessWidget {
     required this.aoAcelerar,
     required this.aoNormalizar,
     required this.aoReiniciar,
+    required this.chovendo,
+    required this.aoAlternarChuva,
   });
 
   final Telemetria telemetria;
@@ -208,6 +213,8 @@ class _Topo extends StatelessWidget {
   final VoidCallback aoAcelerar;
   final VoidCallback aoNormalizar;
   final VoidCallback aoReiniciar;
+  final bool chovendo;
+  final VoidCallback aoAlternarChuva;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -220,6 +227,14 @@ class _Topo extends StatelessWidget {
             ),
             _Conexao(desconectado: desconectado, emTempoReal: emTempoReal),
             const SizedBox(width: Espaco.p),
+            // RN13: chuva manual. Aceso enquanto está chovendo, para o botão
+            // ser também o indicador de que o modo está ligado.
+            _Acao(
+              chovendo ? Icons.water : Icons.water_outlined,
+              chovendo ? 'Encerrar chuva' : 'Simular chuva',
+              aoAlternarChuva,
+              destacado: chovendo,
+            ),
             _Acao(Icons.history, 'Histórico', aoAbrirHistorico),
             _Acao(Icons.fast_forward, 'Modo demonstração', aoAcelerar),
             _Acao(Icons.slow_motion_video, 'Velocidade normal', aoNormalizar),
@@ -239,17 +254,20 @@ class _Topo extends StatelessWidget {
 }
 
 class _Acao extends StatelessWidget {
-  const _Acao(this.icone, this.dica, this.aoTocar);
+  const _Acao(this.icone, this.dica, this.aoTocar, {this.destacado = false});
 
   final IconData icone;
   final String dica;
   final VoidCallback aoTocar;
+  final bool destacado;
 
   @override
   Widget build(BuildContext context) => IconButton(
         tooltip: dica,
         onPressed: aoTocar,
-        icon: Icon(icone, size: 18, color: Cores.textoSecundario),
+        icon: Icon(icone,
+            size: 18,
+            color: destacado ? Cores.verde : Cores.textoSecundario),
         visualDensity: VisualDensity.compact,
         padding: const EdgeInsets.all(Espaco.p),
         constraints: const BoxConstraints(),
@@ -422,6 +440,23 @@ class _CartaoReservatorio extends StatelessWidget {
         const ParDado('Pico previsto', '12h'),
         const SizedBox(height: Espaco.p),
         ParDado('Última leitura', _hora(telemetria.hora)),
+        // RN13: indicador visível enquanto chove, sem cápsula e em caixa
+        // normal, como os outros estados da tela.
+        if (telemetria.chovendo) ...[
+          const SizedBox(height: Espaco.p),
+          Row(children: [
+            const Icon(Icons.water, size: 15, color: Cores.verde),
+            const SizedBox(width: Espaco.p),
+            Expanded(
+              child: Text('Chovendo na fazenda',
+                  style: Fontes.corpo(Cores.verde)),
+            ),
+            Text(
+              '+${Limiares.ganhoChuvaPorTick.toStringAsFixed(1)} por ciclo',
+              style: Fontes.corpo(Cores.verde, tamanho: 12),
+            ),
+          ]),
+        ],
       ],
     );
 

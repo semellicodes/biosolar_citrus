@@ -82,6 +82,21 @@ Handler criarRotas(ServicoSimulacao simulacao, RepositorioFazenda repositorio) {
     });
   });
 
+  // RN13: chuva manual, comando do operador.
+  rotas.post('/simulacao/chuva', (Request requisicao) async {
+    final corpo =
+        jsonDecode(await requisicao.readAsString()) as Map<String, dynamic>;
+    final chovendo = corpo['chovendo'] as bool?;
+    if (chovendo == null) {
+      return _json({
+        'erro': 'requisicao_invalida',
+        'mensagem': 'Informe chovendo (booleano).',
+      }, status: 400);
+    }
+    simulacao.definirChuva(chovendo: chovendo);
+    return _json(simulacao.telemetria.toJson());
+  });
+
   // Canal em tempo real. O REST continua inteiro no ar de proposito: e o
   // fallback do aplicativo quando o WebSocket nao abre ou cai.
   rotas.get('/stream', canalWebSocket(simulacao));
