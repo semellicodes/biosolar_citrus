@@ -44,6 +44,26 @@ celular físico pelo IP da máquina na rede local:
 flutter run --dart-define=SERVIDOR=http://192.168.0.10:8080
 ```
 
+### Gerar o APK para instalar no celular
+
+O endereço do servidor é decidido na compilação, então um APK genérico sai
+apontando para `localhost`, que no celular é o próprio celular. Para gerar um
+que funcione, dispare a rotina de integração contínua manualmente informando o
+endereço:
+
+1. Na aba **Actions** do repositório, escolha o fluxo **CI** e clique em
+   **Run workflow**.
+2. No campo de endereço, informe onde o servidor vai estar, por exemplo
+   `http://192.168.0.10:8080`. O IP sai de `ipconfig getifaddr en0` no macOS ou
+   `hostname -I` no Linux.
+3. Ao terminar, o APK aparece em **Releases**, com link direto que abre no
+   navegador do celular, e também como artefato do run.
+
+O aplicativo só mostra telemetria se alcançar esse endereço pela rede. Com o
+servidor rodando no notebook, o caminho mais confiável é **ligar o roteador do
+celular e conectar o notebook nele**: rede de evento costuma isolar os aparelhos
+entre si, e aí nenhum endereço funciona.
+
 ## Telas
 
 Painel em operação normal. As faixas de alerta aparecem por cor e por texto, o

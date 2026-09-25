@@ -10,6 +10,19 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      servidor:
+        description: >-
+          Endereco do servidor para o APK, por exemplo http://192.168.0.10:8080.
+          Em branco, o APK sai apontando para localhost e so serve para
+          emulador, web e simulador iOS.
+        required: false
+        default: ''
+      publicar:
+        description: Publicar o APK como release, para baixar sem login no GitHub
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   regras:
@@ -59,6 +72,8 @@ jobs:
     name: Versoes de teste
     needs: [regras, aplicativo]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -75,17 +90,60 @@ jobs:
         working-directory: app
 
       - name: Versao Android
-        run: flutter build apk --release
+        # O endereco entra por variavel de ambiente, nunca interpolado direto
+        # no shell: e texto que vem de fora e iria parar em uma linha de
+        # comando.
+        env:
+          SERVIDOR: ${{ inputs.servidor }}
         working-directory: app
+        run: |
+          if [ -n "$SERVIDOR" ]; then
+            echo "APK apontando para $SERVIDOR"
+            flutter build apk --release --dart-define=SERVIDOR="$SERVIDOR"
+          else
+            echo "APK apontando para o padrao (localhost)"
+            flutter build apk --release
+          fi
 
       - name: Versao web, contingencia da apresentacao
         run: flutter build web --release
         working-directory: app
 
+      - name: Bilhete junto do APK
+        env:
+          SERVIDOR: ${{ inputs.servidor }}
+        run: |
+          {
+            echo "BioSolar Citrus, versao de teste"
+            echo
+            echo "Servidor: ${SERVIDOR:-http://localhost:8080 (padrao)}"
+            echo "Commit:   $GITHUB_SHA"
+            echo
+            echo "O aplicativo so mostra telemetria se alcancar esse endereco"
+            echo "pela rede. Com o servidor rodando no notebook, o jeito mais"
+            echo "confiavel e ligar o roteador do celular e conectar o notebook"
+            echo "nele, porque rede de evento costuma isolar os aparelhos."
+          } > app/build/app/outputs/flutter-apk/LEIA-ME.txt
+
       - uses: actions/upload-artifact@v4
         with:
           name: biosolar-citrus-android
-          path: app/build/app/outputs/flutter-apk/app-release.apk
+          path: |
+            app/build/app/outputs/flutter-apk/app-release.apk
+            app/build/app/outputs/flutter-apk/LEIA-ME.txt
+
+      - name: Publicar o APK como release
+        # Artefato de Actions so baixa quem esta logado no GitHub. A release da
+        # link direto, que abre no navegador do celular.
+        if: github.event_name == 'workflow_dispatch' && inputs.publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SERVIDOR: ${{ inputs.servidor }}
+        run: |
+          gh release create "apk-${GITHUB_RUN_NUMBER}" \
+            app/build/app/outputs/flutter-apk/app-release.apk \
+            --title "APK de teste ${GITHUB_RUN_NUMBER}" \
+            --notes "Servidor: ${SERVIDOR:-http://localhost:8080 (padrao)}"$'\n'"Commit: ${GITHUB_SHA}" 
 
       - uses: actions/upload-artifact@v4
         with:
