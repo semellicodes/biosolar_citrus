@@ -1,7 +1,3 @@
-/// Fonte de telemetria: WebSocket com consulta REST de reserva.
-///
-/// Toda a conversa com o mundo mora aqui. O bloc so recebe leitura ou erro, e
-/// nunca sabe por qual caminho ela chegou.
 library;
 
 import 'dart:async';
@@ -16,11 +12,8 @@ import 'api_fazenda.dart';
 class CanalFazenda implements FonteTelemetria {
   CanalFazenda(this._leitor, {this.endereco = enderecoServidor});
 
-  /// Ritmo da consulta de reserva, igual ao que o app usava antes do canal.
   static const Duration intervaloReserva = Duration(seconds: 2);
 
-  /// Teto da espera entre tentativas. Baixo de proposito: com o servidor fora
-  /// do ar isto evita a enxurrada de tentativas sem deixar a volta lenta.
   static const Duration esperaMaxima = Duration(seconds: 5);
 
   final LeitorTelemetria _leitor;
@@ -64,7 +57,6 @@ class CanalFazenda implements FonteTelemetria {
       await canal.ready;
       if (_encerrado) return unawaited(canal.sink.close());
 
-      // Canal de pe: a consulta de reserva sai de cena e a espera zera.
       _tentativas = 0;
       _pararReserva();
 
@@ -80,8 +72,6 @@ class CanalFazenda implements FonteTelemetria {
     }
   }
 
-  /// Canal caiu ou nem abriu: a consulta de reserva assume imediatamente e a
-  /// reconexao fica tentando por baixo, com espera crescente.
   void _cair() {
     _inscricaoCanal?.cancel();
     _inscricaoCanal = null;
@@ -105,14 +95,14 @@ class CanalFazenda implements FonteTelemetria {
     try {
       _saida.add(await _leitor.obterTelemetria());
     } catch (erro) {
-      // Nem o canal nem a consulta responderam: quem ouve decide o que mostrar.
+
       if (!_saida.isClosed) _saida.addError(erro);
     }
   }
 
   void _agendarReconexao() {
     _reconexao?.cancel();
-    // 1s, 2s, 4s e dai em diante o teto.
+
     final espera = Duration(seconds: 1 << _tentativas);
     _tentativas++;
     _reconexao = Timer(

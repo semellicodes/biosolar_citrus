@@ -1,4 +1,3 @@
-/// Cliente REST. Conversa com o mundo e converte JSON, nao decide nada.
 library;
 
 import 'dart:convert';
@@ -10,10 +9,6 @@ import '../../../nucleo/falhas.dart';
 import '../../eventos/dominio/contratos.dart';
 import '../dominio/contratos.dart';
 
-/// O emulador Android nao enxerga localhost do host, ele usa 10.0.2.2. Web,
-/// desktop e o simulador iOS usam localhost. Sobrescreva com
-/// `--dart-define=SERVIDOR=http://192.168.0.10:8080` para rodar no celular
-/// fisico pela rede local.
 const String enderecoServidor =
     String.fromEnvironment('SERVIDOR', defaultValue: 'http://localhost:8080');
 
@@ -44,7 +39,6 @@ class ApiFazenda implements LeitorTelemetria, LeitorEventos, EmissorComando {
     final resposta = await _postar(
         '/bombas/acionar', {'bombaId': bombaId, 'ligar': ligar});
 
-    // 409 e a recusa por bloqueio (RN08), decidida no servidor.
     if (resposta.statusCode == 409) {
       final corpo = jsonDecode(resposta.body) as Map<String, dynamic>;
       throw FalhaBloqueio(corpo['mensagem'] as String);

@@ -1,11 +1,3 @@
-// Testes de bloc. O objetivo nao e cobertura alta, e cobrir exatamente o que a
-// banca pode questionar: telemetria recebida vira estado carregado, queda de
-// conexao nao perde o ultimo dado, e a recusa do servidor chega inteira na
-// interface.
-//
-// Nenhum servidor sobe aqui: os contratos do dominio sao substituidos por
-// falsos, que e o ganho pratico da inversao de dependencia.
-
 import 'dart:async';
 
 import 'package:app/funcionalidades/monitoramento/apresentacao/comando_bloc.dart';
@@ -17,7 +9,6 @@ import 'package:compartilhado/modelos.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-/// Fonte falsa: um controlador que o teste alimenta a mao, no lugar do canal.
 class FonteFalsa implements FonteTelemetria {
   final controlador = StreamController<Telemetria>.broadcast();
   var conectou = false;
@@ -47,8 +38,6 @@ final telemetria = Telemetria(
   hora: DateTime(2026, 9, 24, 12),
 );
 
-/// O bloc processa MonitoramentoIniciado de forma assincrona. Sem esperar, o
-/// teste empurraria o dado antes de a inscricao na fonte existir.
 Future<void> _inscrever() =>
     Future<void>.delayed(const Duration(milliseconds: 20));
 

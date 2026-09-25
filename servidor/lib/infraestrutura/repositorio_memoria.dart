@@ -1,23 +1,9 @@
-/// RF01: o estado da fazenda vive na memoria do servidor, nunca no dispositivo.
 library;
 
 import 'package:compartilhado/modelos.dart';
 
 import '../dominio/repositorio_fazenda.dart';
 
-/// Estado inicial da fazenda demonstrada.
-///
-/// A fazenda comeca em estiagem: reservatorio baixo e os quatro talhoes ja
-/// abaixo ou rente ao gatilho critico. Isso faz as quatro bombas ligarem de
-/// saida, o reservatorio despencar e o bloqueio acontecer nos primeiros ciclos,
-/// e e o que da os tres cenarios da apresentacao em menos de um minuto, sem
-/// precisar do modo demonstracao. Depois do bloqueio a captacao solar assume e
-/// o sistema se estabiliza sozinho.
-///
-/// O relogio comeca de madrugada de proposito: as bombas ligam sem sol nenhum
-/// para repor a agua, o que e o que faz o reservatorio chegar ao bloqueio. O
-/// amanhecer logo depois e o que traz a fazenda de volta, e isso e a RN12
-/// aparecendo na narrativa em vez de so na tabela.
 Telemetria estadoInicial(DateTime agora) => Telemetria(
       reservatorio: const Reservatorio(
           nivel: 26, capacidadeLitros: 50000, bloqueioAtivo: false),
@@ -53,8 +39,6 @@ Telemetria estadoInicial(DateTime agora) => Telemetria(
 class RepositorioMemoria implements RepositorioFazenda {
   RepositorioMemoria() : _telemetria = estadoInicial(DateTime.now());
 
-  /// Teto do historico em memoria, para que uma sessao longa nao cresca sem
-  /// limite. Os mais antigos sao descartados.
   static const int maximoEventos = 500;
 
   Telemetria _telemetria;

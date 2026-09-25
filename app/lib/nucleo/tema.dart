@@ -1,8 +1,3 @@
-/// Tokens do painel. Cor, espaço, raio e tipografia vivem só aqui.
-///
-/// Pensado para uso em campo: o produtor lê no sol, de relance e com uma mão.
-/// Isso manda fundo claro, contraste alto, texto grande e alvo de toque grande,
-/// que é o oposto do painel escuro de sala de controle.
 library;
 
 import 'package:compartilhado/modelos.dart';
@@ -17,50 +12,37 @@ abstract final class Espaco {
   static const double xg = 32;
 }
 
-/// Dois valores, e só. Card e elemento interno. Raio grande foi removido de
-/// propósito, para não voltar por acidente.
 abstract final class Raio {
   static const double card = 10;
   static const double interno = 6;
 
-  /// Canto totalmente arredondado, para o botao de acionamento.
   static const double pilula = 999;
 }
 
 abstract final class Cores {
-  // Cinza de papel técnico: neutro para os estados de irrigação aparecerem.
+
   static const Color fundo = Color(0xFFEFF1EC);
 
-  // Superfície de leitura, quase branca sem parecer uma tela genérica.
   static const Color superficie = Color(0xFFFBFCF8);
 
-  // Elementos secundários.
   static const Color superficieAlta = Color(0xFFE3E8DC);
 
-  // Borda oliva discreta.
   static const Color borda = Color(0xFFC7D0C1);
 
-  // Gráficos inativos.
   static const Color grafico = Color(0xFFAEBE9E);
 
-  // Textos.
   static const Color texto = Color(0xFF152017);
   static const Color textoSecundario = Color(0xFF4A594B);
   static const Color textoTerciario = Color(0xFF6D796C);
 
-  // Folha madura.
   static const Color verde = Color(0xFF17633A);
 
-  // Casca de citrus.
   static const Color ambar = Color(0xFFF2A900);
 
-  // Crítico.
   static const Color vermelho = Color(0xFFC33A1F);
 
-  // Água da irrigação.
   static const Color azulAgua = Color(0xFF2878A8);
 
-  // Marca.
   static const Color laranjaMarca = Color(0xFFE27B18);
 
   static Color da(Faixa faixa) => switch (faixa) {
@@ -76,7 +58,6 @@ abstract final class Cores {
   };
 }
 
-/// RNF04: o estado é identificável por texto, não só por cor. Em caixa normal.
 const Map<Faixa, String> rotulos = {
   Faixa.verde: 'Normal',
   Faixa.amarelo: 'Atenção',
@@ -86,17 +67,11 @@ const Map<Faixa, String> rotulos = {
 const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
 
 abstract final class Fontes {
-  /// Interface inteira, menos o nome do aplicativo e os valores numéricos.
+
   static const String familia = 'CreatoDisplay';
 
-  /// Só o nome do aplicativo, no cabeçalho.
   static const String marca = 'Coolvetica';
 
-  /// Valores que mudam a cada ciclo continuam em Inter.
-  ///
-  /// A Creato Display não tem dígitos de largura fixa nem o recurso de figuras
-  /// tabulares, e sem isso o número grande dança horizontalmente a cada
-  /// atualização, que é justamente o que faz um painel parecer instável.
   static TextStyle valor(double tamanho, Color cor) => GoogleFonts.inter(
     fontSize: tamanho,
     height: 1,
@@ -106,7 +81,6 @@ abstract final class Fontes {
     fontFeatures: _tabular,
   );
 
-  /// Nome do aplicativo. Único lugar em que a Coolvetica aparece.
   static TextStyle nomeDoAplicativo(double tamanho) => TextStyle(
     fontFamily: marca,
     fontSize: tamanho,
@@ -114,7 +88,6 @@ abstract final class Fontes {
     height: 1.1,
   );
 
-  /// Única caixa alta do aplicativo: título de seção.
   static TextStyle secao() => const TextStyle(
     fontFamily: familia,
     fontSize: 13,
@@ -162,7 +135,6 @@ ThemeData construirTema() {
   );
 }
 
-/// Contêiner padrão. Um raio, uma borda, em toda a tela.
 class Cartao extends StatelessWidget {
   const Cartao({required this.child, this.preenchimento, super.key});
 
@@ -181,10 +153,6 @@ class Cartao extends StatelessWidget {
   );
 }
 
-/// Estado como ponto e texto, no lugar de cápsula tingida.
-///
-/// O ponto carrega a cor, o texto carrega o significado, e quem não distingue
-/// cor continua lendo.
 class PontoEstado extends StatelessWidget {
   const PontoEstado(this.faixa, {this.texto, super.key});
 
@@ -204,8 +172,7 @@ class PontoEstado extends StatelessWidget {
         ),
       ),
       const SizedBox(width: Espaco.p),
-      // Crítico chega com peso maior, porque é o que precisa ser visto de
-      // relance e de longe.
+
       Text(
         texto ?? rotulos[faixa]!,
         style: Fontes.titulo(
@@ -217,8 +184,6 @@ class PontoEstado extends StatelessWidget {
   );
 }
 
-/// Par rótulo e valor, alinhado em coluna. É o que faz a leitura parecer
-/// instrumento em vez de cartaz.
 class ParDado extends StatelessWidget {
   const ParDado(this.rotulo, this.valor, {this.cor, super.key});
 
@@ -243,7 +208,6 @@ class ParDado extends StatelessWidget {
   );
 }
 
-/// Barra de nível. Fina, sem brilho e sem raio grande.
 class BarraNivel extends StatelessWidget {
   const BarraNivel({
     required this.fracao,
@@ -276,15 +240,6 @@ class BarraNivel extends StatelessWidget {
   );
 }
 
-/// Botão de acionamento, no lugar do Switch do Material.
-///
-/// Feito para ser tocado com uma mão, de pé no meio do pomar: 56 pixels de
-/// altura e o rótulo dizendo a ação que vai acontecer, não o estado, porque o
-/// estado já está escrito acima dele.
-///
-/// Acionar é a ação de destaque, então vem preenchida. Desligar é a de recuo,
-/// então vem vazada. Durante o bloqueio mostra cadeado, em vez de ficar apenas
-/// cinza, que é como um Switch desabilitado se parece com um Switch qualquer.
 class Interruptor extends StatelessWidget {
   const Interruptor({
     required this.ligado,
@@ -297,9 +252,6 @@ class Interruptor extends StatelessWidget {
   final bool travado;
   final ValueChanged<bool> aoAlternar;
 
-  /// Altura do alvo de toque. Encolheu para o botão parar de competir com o
-  /// número de umidade, que é o elemento mais pesado do cartão, mas fica no
-  /// mínimo de 44 recomendado para toque.
   static const double altura = 44;
 
   @override
@@ -367,10 +319,6 @@ class Interruptor extends StatelessWidget {
   }
 }
 
-/// Seletor segmentado próprio.
-///
-/// O ChoiceChip do Material media o rótulo antes de a fonte carregar e cortava
-/// o texto ("Tud", "Operad"). Aqui a largura sai do próprio texto.
 class Segmentado extends StatelessWidget {
   const Segmentado({
     required this.opcoes,
@@ -423,11 +371,6 @@ class Segmentado extends StatelessWidget {
   );
 }
 
-/// Número que percorre a distância até o valor novo, em vez de trocar.
-///
-/// Com AnimatedSwitcher os dois valores coexistiam por 300ms e o número
-/// aparecia fantasma a cada ciclo. Interpolar o próprio valor resolve isso e
-/// ainda lê melhor como telemetria.
 class ValorAnimado extends StatelessWidget {
   const ValorAnimado({
     required this.valor,

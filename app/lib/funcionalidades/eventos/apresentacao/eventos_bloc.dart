@@ -1,4 +1,3 @@
-/// Bloc do historico. Busca a lista e guarda o filtro por origem.
 library;
 
 import 'dart:async';
@@ -23,7 +22,6 @@ class HistoricoAtualizado extends EventoHistorico {
 class FiltroAlterado extends EventoHistorico {
   const FiltroAlterado(this.origem);
 
-  /// Nulo mostra tudo.
   final Origem? origem;
 }
 
@@ -57,7 +55,7 @@ class EventosBloc extends Bloc<EventoHistorico, EstadoHistorico> {
       try {
         emit(state.copiarCom(eventos: await _leitor.obterEventos(limite: 100)));
       } catch (_) {
-        // Historico e tela secundaria: sem contato, mantem o que ja tem.
+
       }
     });
 

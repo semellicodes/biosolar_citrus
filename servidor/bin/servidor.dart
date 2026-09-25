@@ -1,7 +1,3 @@
-/// Ponto de entrada do servidor.
-///
-/// Por enquanto so a simulacao, imprimindo o estado a cada ciclo. As rotas HTTP
-/// entram na fase 2, e o projeto ja esta vivo antes de existir qualquer tela.
 library;
 
 import 'package:compartilhado/modelos.dart';
@@ -41,7 +37,6 @@ Future<void> main(List<String> argumentos) async {
         ' | bombas: ${bombas.isEmpty ? '-' : bombas}');
   });
 
-  // Cada decisao aparece logo abaixo do ciclo que a produziu.
   simulacao.novosEventos.listen((evento) =>
       print('           \x1b[36m> ${evento.descricao}: ${evento.motivo}\x1b[0m'));
 

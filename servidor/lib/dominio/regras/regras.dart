@@ -1,18 +1,7 @@
-/// Motor de regras do BioSolar Citrus, RN01 ate RN13.
-///
-/// Todas as funcoes aqui sao puras: recebem o estado e devolvem o estado
-/// seguinte junto com os eventos gerados. Nao existe rede, nao existe tela e
-/// nao existe relogio proprio, o instante chega por parametro. E por isso que
-/// a suite de testes deste arquivo roda em milissegundos e e a prova direta de
-/// que as exigencias do caderno foram cumpridas (RNF07, RNF09).
 library;
 
 import 'package:compartilhado/modelos.dart';
 
-/// Resultado de uma avaliacao: o estado seguinte e o que foi decidido.
-///
-/// Quando [motivoRecusa] vem preenchido, a [telemetria] e a mesma que entrou,
-/// porque a decisao foi nao alterar nada (RN08).
 class Decisao {
   const Decisao(this.telemetria, this.eventos, {this.motivoRecusa});
 
@@ -23,15 +12,6 @@ class Decisao {
   bool get aceito => motivoRecusa == null;
 }
 
-/// RN01, RN02, RN03, RN12 e RN13: avanco fisico da simulacao.
-///
-/// A umidade cai nos talhoes sem aspersor e sobe nos irrigados. O reservatorio
-/// perde agua proporcionalmente ao numero de bombas ligadas e ganha agua pela
-/// captacao solar, cuja vazao acompanha a curva do sol e e nula a noite. No
-/// pico do dia a reposicao equivale a um quinto do consumo com todas as bombas
-/// ligadas, ou seja, ela nunca compensa a irrigacao plena: o reservatorio
-/// continua caindo ate o bloqueio. Com as bombas paradas ela repoe devagar, e
-/// e isso que permite a liberacao do bloqueio (RN09) acontecer de verdade.
 Telemetria atualizarSensores(Telemetria estado, DateTime agora) {
   final talhoes = [
     for (final talhao in estado.talhoes)
@@ -44,7 +24,6 @@ Telemetria atualizarSensores(Telemetria estado, DateTime agora) {
       ),
   ];
 
-  // RN03 e RN12: consumo das bombas contra a captacao solar.
   final horaSimulada =
       (estado.horaSimulada + Limiares.horasPorTick) % 24;
   final bombasLigadas = estado.bombas.where((b) => b.ligada).length;
@@ -62,24 +41,12 @@ Telemetria atualizarSensores(Telemetria estado, DateTime agora) {
   );
 }
 
-/// RN01, RN02 e RN13: quanto a umidade de um talhao muda em um ciclo.
-///
-/// A ordem e de precedencia fisica: aspersor ligado molha mais que chuva, e
-/// chuva molha mais do que o sol seca. Nenhuma regra de decisao passa por aqui;
-/// isto e so o que o mundo faz com o solo.
 double _variacaoDaUmidade({required bool irrigando, required bool chovendo}) {
-  if (irrigando) return Limiares.ganhoUmidadePorTick; // RN02
-  if (chovendo) return Limiares.ganhoChuvaPorTick; // RN13
-  return -Limiares.quedaUmidadePorTick; // RN01
+  if (irrigando) return Limiares.ganhoUmidadePorTick;
+  if (chovendo) return Limiares.ganhoChuvaPorTick;
+  return -Limiares.quedaUmidadePorTick;
 }
 
-/// RN13: quanto a chuva acrescenta ao reservatorio neste ciclo.
-///
-/// Tem teto: acima de [Limiares.tetoChuvaReservatorio] a chuva nao acrescenta
-/// mais nada, senao alguns segundos de chuva encheriam a fazenda e o cenario
-/// perderia o sentido. A chuva tambem nunca desliga o bloqueio por conta
-/// propria: ela so levanta o nivel, e quem decide liberar continua sendo a
-/// RN09, avaliada no ciclo como sempre foi.
 double _captacaoDeChuva(Telemetria estado) {
   if (!estado.chovendo) return 0;
   final espaco =
@@ -90,8 +57,6 @@ double _captacaoDeChuva(Telemetria estado) {
       : Limiares.captacaoChuvaPorTick;
 }
 
-/// RN13: liga ou desliga a chuva. E comando de operador, entao o evento sai com
-/// origem de operador, e nenhuma regra de automacao muda de comportamento.
 Decisao definirChuva(Telemetria estado, bool chovendo, DateTime agora) {
   if (estado.chovendo == chovendo) return Decisao(estado, const []);
   return Decisao(
@@ -113,17 +78,10 @@ Decisao definirChuva(Telemetria estado, bool chovendo, DateTime agora) {
   );
 }
 
-/// RN06 e RN09: bloqueio de emergencia e sua liberacao.
-///
-/// Abaixo do limite critico o bloqueio e ativado e todas as bombas sao
-/// desligadas de forma irrestrita. O bloqueio so cai quando o nivel volta
-/// acima do patamar de seguranca, que e mais alto que o gatilho de proposito,
-/// para nao ficar oscilando na fronteira.
 Decisao avaliarBloqueioHidrico(Telemetria estado, DateTime agora) {
   final reservatorio = estado.reservatorio;
   final eventos = <Evento>[];
 
-  // RN06
   if (reservatorio.nivel < Limiares.reservatorioCritico) {
     final bombasLigadas = estado.bombas.where((b) => b.ligada).toList();
     if (!reservatorio.bloqueioAtivo) {
@@ -161,7 +119,6 @@ Decisao avaliarBloqueioHidrico(Telemetria estado, DateTime agora) {
     );
   }
 
-  // RN09
   if (reservatorio.bloqueioAtivo &&
       reservatorio.nivel >= Limiares.reservatorioSeguro) {
     eventos.add(Evento(
@@ -180,16 +137,11 @@ Decisao avaliarBloqueioHidrico(Telemetria estado, DateTime agora) {
     );
   }
 
-  // Entre o gatilho e o patamar de seguranca o bloqueio permanece como esta.
   return Decisao(estado, eventos);
 }
 
-/// RN04 e RN05: irrigacao critica automatica e seu encerramento.
-///
-/// Esta funcao pressupoe que o bloqueio ja foi avaliado. Ela nao liga nada com
-/// bloqueio ativo, o que garante RN07 mesmo se for chamada fora de ordem.
 Decisao avaliarIrrigacaoCritica(Telemetria estado, DateTime agora) {
-  // RN07: precedencia absoluta do bloqueio sobre a irrigacao critica.
+
   if (estado.reservatorio.bloqueioAtivo) return Decisao(estado, const []);
 
   final eventos = <Evento>[];
@@ -198,7 +150,6 @@ Decisao avaliarIrrigacaoCritica(Telemetria estado, DateTime agora) {
   for (final bomba in estado.bombas) {
     final talhao = estado.talhoes.firstWhere((t) => t.id == bomba.talhaoId);
 
-    // RN04
     if (!bomba.ligada && talhao.umidade < Limiares.umidadeCritica) {
       eventos.add(Evento(
         hora: agora,
@@ -214,17 +165,6 @@ Decisao avaliarIrrigacaoCritica(Telemetria estado, DateTime agora) {
       continue;
     }
 
-    // RN05: o sistema alerta sobre desperdicio mas nao tira a decisao do
-    // operador. A bomba que ele ligou continua ligada, so o bloqueio a derruba.
-    //
-    // O aviso sai uma unica vez, no ciclo em que a umidade cruza o patamar.
-    // E um teste de cruzamento puro, sem guardar estado: como a bomba esta
-    // ligada, a umidade so sobe, entao o patamar e atravessado uma vez so.
-    //
-    // O teto de 100 nao serve como segundo gatilho: la a umidade para de
-    // crescer e o mesmo teste passaria a valer em todos os ciclos seguintes. O
-    // caso do operador que liga uma bomba em solo ja encharcado e avisado no
-    // proprio comando, em avaliarComandoManual.
     if (bomba.ligada && bomba.origemUltimoAcionamento == Origem.operador) {
       if (talhao.umidade >= Limiares.umidadeSegura &&
           talhao.umidade - Limiares.ganhoUmidadePorTick <
@@ -236,7 +176,6 @@ Decisao avaliarIrrigacaoCritica(Telemetria estado, DateTime agora) {
       continue;
     }
 
-    // RN05: so o proprio sistema encerra o que o sistema ligou.
     if (bomba.ligada &&
         bomba.origemUltimoAcionamento == Origem.sistema &&
         talhao.umidade >= Limiares.umidadeSegura) {
@@ -269,11 +208,6 @@ Evento _alertaDesperdicio(Talhao talhao, DateTime agora, String complemento) =>
           '${Limiares.umidadeSegura.toStringAsFixed(0)}% $complemento',
     );
 
-/// Um ciclo completo da simulacao, na ordem obrigatoria do capitulo 2.
-///
-/// sensores, depois seguranca hidrica, e so entao irrigacao. A ordem e o que
-/// materializa RN07: com o reservatorio critico o bloqueio ja marcou o estado
-/// antes de qualquer talhao seco ser considerado.
 Decisao executarCiclo(Telemetria estado, DateTime agora) {
   final aposSensores = atualizarSensores(estado, agora);
   final aposBloqueio = avaliarBloqueioHidrico(aposSensores, agora);
@@ -284,10 +218,6 @@ Decisao executarCiclo(Telemetria estado, DateTime agora) {
   );
 }
 
-/// RN08: comando manual do operador, recusado durante o bloqueio.
-///
-/// A recusa e decidida aqui, no dominio do servidor, e nao na interface. O
-/// botao desabilitado no aplicativo e conveniencia, esta funcao e a garantia.
 Decisao avaliarComandoManual(
   Telemetria estado,
   String bombaId,
@@ -324,9 +254,6 @@ Decisao avaliarComandoManual(
     )
   ];
 
-  // RN05: ligar uma bomba em solo que ja passou do patamar de seguranca e
-  // desperdicio desde o primeiro ciclo. O sistema avisa aqui, uma vez, e nao
-  // impede nada.
   if (ligar) {
     final bomba = estado.bombas.where((b) => b.id == bombaId).firstOrNull;
     final talhao =

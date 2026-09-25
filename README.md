@@ -10,8 +10,10 @@ apenas exibe o que está acontecendo e envia comandos do operador. **Nenhuma
 regra de automação mora no aplicativo.** Se o aplicativo for apagado, a fazenda
 continua sendo irrigada corretamente.
 
-HackUFRA, V JTI, Caderno de Desafio Opção 03. Autora: Paula. Universidade
-Federal Rural da Amazônia, Campus Capitão Poço.
+**Segundo lugar no HackUFRA**, V Jornada de Tecnologia da Informação.
+
+Caderno de Desafio Opção 03. Autora: Paula. Universidade Federal Rural da
+Amazônia, Campus Capitão Poço.
 
 ## Como rodar
 
@@ -156,8 +158,9 @@ acima dos 48 recomendados para toque.
 ## Regras de negócio
 
 Todas as decisões vivem em [`servidor/lib/dominio/regras/regras.dart`](servidor/lib/dominio/regras/regras.dart),
-como funções puras que recebem o estado e devolvem o estado seguinte. Cada
-função leva no topo o código da regra que implementa.
+como funções puras que recebem o estado e devolvem o estado seguinte. A ligação
+entre cada regra e o código que a implementa está na tabela abaixo e nos nomes
+dos testes, que citam a regra que provam.
 
 A coluna de origem separa o que o caderno exige do que foi projetado aqui. Onde
 o caderno define o comportamento mas não o número, a linha aparece como caderno

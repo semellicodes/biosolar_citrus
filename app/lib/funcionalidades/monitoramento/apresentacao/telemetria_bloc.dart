@@ -1,7 +1,3 @@
-/// Bloc do painel: recebe telemetria e publica o estado da tela.
-///
-/// Nao decide nada sobre irrigacao. Ele so traduz o que chegou do servidor em
-/// um estado que a tela sabe desenhar.
 library;
 
 import 'dart:async';
@@ -19,8 +15,6 @@ class MonitoramentoIniciado extends EventoTelemetria {
   const MonitoramentoIniciado();
 }
 
-/// Telemetria que chegou de fora: empurrada pelo canal, trazida pela consulta
-/// de reserva ou devolvida por um comando aceito. O bloc nao distingue.
 class TelemetriaRecebida extends EventoTelemetria {
   const TelemetriaRecebida(this.telemetria);
   final Telemetria telemetria;
@@ -33,8 +27,6 @@ class ContatoPerdido extends EventoTelemetria {
 sealed class EstadoTelemetria {
   const EstadoTelemetria();
 
-  /// Ultima leitura conhecida, se houver. Cache de exibicao em memoria, para a
-  /// tela nao ficar vazia entre duas atualizacoes (RNF02: nao e persistencia).
   Telemetria? get ultima => null;
 }
 
@@ -46,16 +38,12 @@ class TelemetriaCarregada extends EstadoTelemetria {
   const TelemetriaCarregada(this.telemetria, {this.emTempoReal = true});
   final Telemetria telemetria;
 
-  /// Diz se a leitura veio do canal ou da consulta de reserva. So o indicador
-  /// de conexao usa isso; o resto da tela nao precisa saber.
   final bool emTempoReal;
 
   @override
   Telemetria get ultima => telemetria;
 }
 
-/// RNF05: a queda da conexao nao trava o aplicativo. O ultimo dado conhecido
-/// continua na tela e a proxima consulta reconecta sozinha.
 class TelemetriaDesconectada extends EstadoTelemetria {
   const TelemetriaDesconectada(this.ultima);
 
@@ -87,8 +75,7 @@ class TelemetriaBloc extends Bloc<EventoTelemetria, EstadoTelemetria> {
 
   @override
   Future<void> close() {
-    // Sem isto o aplicativo vaza memoria e ainda tenta emitir estado depois de
-    // a tela ter sido destruida.
+
     _inscricao?.cancel();
     _fonte.encerrar();
     return super.close();

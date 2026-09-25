@@ -1,7 +1,3 @@
-/// Histórico de decisões.
-///
-/// A lista é o print que prova a autonomia: no modo demonstração ela enche de
-/// eventos do sistema sem ninguém tocar em nada.
 library;
 
 import 'package:compartilhado/modelos.dart';
@@ -16,12 +12,9 @@ const _azul = Cores.azulAgua;
 const _amarelo = Cores.ambar;
 const _cinza = Cores.textoSecundario;
 
-/// Cor e ícone por tipo, para achar o bloqueio no meio da lista sem ler.
 ({Color cor, IconData icone}) _aparencia(TipoEvento tipo) => switch (tipo) {
   TipoEvento.bloqueioAtivado => (cor: _vermelho, icone: Icons.block),
-  // A recusa e consequencia direta do bloqueio e e a prova de que a regra
-  // vive no servidor, entao ela puxa a mesma cor em vez do cinza de
-  // comando do operador.
+
   TipoEvento.comandoRecusado => (cor: _vermelho, icone: Icons.gpp_bad),
   TipoEvento.bloqueioLiberado => (cor: _azul, icone: Icons.lock_open),
   TipoEvento.irrigacaoIniciada => (cor: _azul, icone: Icons.water_drop),
@@ -104,7 +97,7 @@ class TelaEventos extends StatelessWidget {
                           style: Fontes.corpo(_cinza),
                         ),
                       )
-                    // Construcao sob demanda: a lista cresce durante a sessao.
+
                     : ListView.separated(
                         itemCount: visiveis.length,
                         separatorBuilder: (_, _) => const Divider(height: 1),
@@ -130,8 +123,7 @@ class _Linha extends StatelessWidget {
     final doSistema = evento.origem == Origem.sistema;
 
     return ListTile(
-      // Barra na lateral separando o que o sistema decidiu do que o operador
-      // mandou, visivel de longe durante a demonstracao.
+
       leading: SizedBox(
         width: 44,
         child: Row(
@@ -162,7 +154,7 @@ class _Linha extends StatelessWidget {
         children: [
           Text(_hora(evento.hora), style: Fontes.corpo(_cinza, tamanho: 12)),
           const SizedBox(height: Espaco.xs),
-          // RN11: a origem e escrita, nao so sugerida pela cor (RNF04).
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(

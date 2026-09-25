@@ -1,7 +1,3 @@
-/// Bloc dos comandos do operador.
-///
-/// O estado de recusa carrega a mensagem que veio do servidor. A interface
-/// exibe exatamente essa mensagem, o que deixa claro que a regra vive la.
 library;
 
 import 'package:compartilhado/modelos.dart';
@@ -33,7 +29,6 @@ class ReinicioSolicitado extends EventoComando {
   const ReinicioSolicitado();
 }
 
-/// RN13.
 class ChuvaSolicitada extends EventoComando {
   const ChuvaSolicitada({required this.chovendo});
   final bool chovendo;
@@ -60,7 +55,6 @@ class ComandoAceito extends EstadoComando {
   final Telemetria telemetria;
 }
 
-/// RN08. A causa vem do servidor, nunca de uma checagem local.
 class ComandoRecusado extends EstadoComando {
   const ComandoRecusado(this.mensagem);
   final String mensagem;

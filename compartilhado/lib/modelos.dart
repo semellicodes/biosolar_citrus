@@ -1,14 +1,9 @@
-/// Contratos de dados falados pelo servidor e pelo aplicativo.
-///
-/// Dart puro: nada de Flutter, de cliente HTTP ou de framework aqui.
 library;
 
 import 'dart:math' as math;
 
-/// Faixa de alerta cromatica de um indicador (RN10).
 enum Faixa { verde, amarelo, vermelho }
 
-/// Quem originou uma acao registrada no historico (RN11).
 enum Origem { operador, sistema }
 
 enum TipoEvento {
@@ -26,78 +21,40 @@ enum TipoEvento {
   simulacaoPausada,
 }
 
-/// Limiares que definem o comportamento da simulacao.
-///
-/// Ficam no compartilhado porque tanto o servidor (para decidir) quanto o
-/// aplicativo (para rotular faixas) precisam falar dos mesmos numeros. Decidir
-/// continua sendo exclusividade do servidor.
 class Limiares {
-  /// RN04: abaixo disso o aspersor do talhao e acionado automaticamente.
+
   static const double umidadeCritica = 25;
 
-  /// RN05: patamar de seguranca que encerra a irrigacao automatica. Fica acima
-  /// do gatilho de proposito, para criar histerese e evitar liga e desliga.
   static const double umidadeSegura = 45;
 
-  /// Fronteira entre a faixa amarela e a verde de um talhao.
   static const double umidadeAtencao = 35;
 
-  /// RN06: abaixo disso o bloqueio de emergencia e ativado.
   static const double reservatorioCritico = 15;
 
-  /// RN09: o bloqueio so e liberado quando o nivel volta acima disso.
   static const double reservatorioSeguro = 25;
 
-  /// Fronteira entre a faixa amarela e a verde do reservatorio.
   static const double reservatorioAtencao = 40;
 
-  /// RN01: queda natural da umidade por ciclo, em pontos percentuais.
   static const double quedaUmidadePorTick = 1.2;
 
-  /// RN02: recuperacao da umidade por ciclo com aspersor ligado.
   static const double ganhoUmidadePorTick = 3.0;
 
-  /// RN03: consumo do reservatorio por bomba ligada, por ciclo.
   static const double consumoPorBombaPorTick = 0.40;
 
-  /// RN12: vazao maxima da captacao solar, no pico do dia.
-  ///
-  /// Calibrado logo abaixo do consumo com as quatro bombas ligadas, que e
-  /// 4 x 0,40 = 1,60. No pico do sol, portanto, irrigar tudo ao mesmo tempo
-  /// ainda derruba o reservatorio, e o bloqueio continua sendo possivel.
-  ///
-  /// Mas a captacao e nula a noite e a irrigacao e intermitente, entao na media
-  /// do dia ela cobre a manutencao dos quatro talhoes: a fazenda se paga sem
-  /// deixar de ser vulneravel a irrigacao plena. O T13 prova esse equilibrio.
-  // ponytail: numero de calibragem. Subir se o sistema nao se recuperar depois
-  // do bloqueio, baixar se o bloqueio deixar de acontecer.
   static const double recargaSolarPico = 1.5;
 
-  /// Quanto o relogio da fazenda avanca a cada ciclo. Um dia inteiro leva 96
-  /// ciclos, cerca de meio minuto no modo demonstracao.
   static const double horasPorTick = 0.25;
 
   static const double amanhecer = 6;
   static const double anoitecer = 18;
 
-  /// RN13: quanto a umidade do solo sobe por ciclo enquanto chove, em talhao
-  /// sem aspersor. Menor que o ganho da irrigacao de proposito: chuva molha o
-  /// pomar, nao substitui o sistema.
   static const double ganhoChuvaPorTick = 1.5;
 
-  /// RN13: quanto o reservatorio recebe de chuva por ciclo.
   static const double captacaoChuvaPorTick = 1.2;
 
-  /// RN13: teto da captacao de chuva. Acima disto a chuva nao acrescenta mais
-  /// nada ao reservatorio, senao alguns segundos de chuva encheriam a fazenda
-  /// e o cenario perderia o sentido.
   static const double tetoChuvaReservatorio = 70;
 }
 
-/// Intensidade da geracao solar em uma hora do dia, de 0 a 1.
-///
-/// Zero antes do amanhecer e depois do anoitecer, pico ao meio dia. E a mesma
-/// curva usada pela captacao de agua (RN12) e pelo balanco energetico (F08).
 double fatorSolar(double hora) {
   if (hora <= Limiares.amanhecer || hora >= Limiares.anoitecer) return 0;
   return math.sin(math.pi *
@@ -119,10 +76,8 @@ class Talhao {
   final String nome;
   final String cultura;
 
-  /// Umidade do solo em percentual, de 0 a 100.
   final double umidade;
 
-  /// RN10: faixa de alerta derivada da umidade atual.
   Faixa get faixa => umidade < Limiares.umidadeCritica
       ? Faixa.vermelho
       : umidade < Limiares.umidadeAtencao
@@ -164,7 +119,6 @@ class Bomba {
   final String talhaoId;
   final bool ligada;
 
-  /// RN11: quem foi responsavel pelo ultimo acionamento desta bomba.
   final Origem? origemUltimoAcionamento;
 
   Bomba copiarCom({bool? ligada, Origem? origemUltimoAcionamento}) => Bomba(
@@ -199,14 +153,11 @@ class Reservatorio {
     required this.bloqueioAtivo,
   });
 
-  /// Nivel atual em percentual, de 0 a 100.
   final double nivel;
   final double capacidadeLitros;
 
-  /// RN06: enquanto verdadeiro nenhuma bomba pode operar.
   final bool bloqueioAtivo;
 
-  /// RN10: faixa de alerta derivada do nivel atual.
   Faixa get faixa => nivel < Limiares.reservatorioCritico
       ? Faixa.vermelho
       : nivel < Limiares.reservatorioAtencao
@@ -265,8 +216,6 @@ class Evento {
       };
 }
 
-/// Estado completo da fazenda em um instante. E o que trafega no GET
-/// /telemetria e no WS /stream.
 class Telemetria {
   const Telemetria({
     required this.reservatorio,
@@ -281,18 +230,12 @@ class Telemetria {
   final List<Talhao> talhoes;
   final List<Bomba> bombas;
 
-  /// Instante real da leitura.
   final DateTime hora;
 
-  /// Hora do dia na fazenda simulada, de 0 a 24. E ela que define a curva
-  /// solar, e nao o relogio do servidor, para que a demonstracao funcione a
-  /// qualquer hora em que a banca assistir.
   final double horaSimulada;
 
   double get fatorSolarAtual => fatorSolar(horaSimulada);
 
-  /// RN13: chuva ligada pelo operador. Nao desliga nenhuma regra, apenas muda
-  /// o que a fisica do ciclo faz com a umidade e com o reservatorio.
   final bool chovendo;
 
   Bomba bombaDo(String talhaoId) =>

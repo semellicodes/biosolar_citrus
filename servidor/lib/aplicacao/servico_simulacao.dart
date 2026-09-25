@@ -1,7 +1,3 @@
-/// Servico de simulacao: controla o tempo, nao decide nada.
-///
-/// A responsabilidade unica aqui e disparar o ciclo no intervalo certo e
-/// guardar o resultado. Toda decisao continua sendo do motor de regras.
 library;
 
 import 'dart:async';
@@ -15,11 +11,8 @@ import '../dominio/repositorio_fazenda.dart';
 class ServicoSimulacao {
   ServicoSimulacao(this._repositorio);
 
-  /// RF12: velocidade de operacao normal.
   static const Duration velocidadeNormal = Duration(seconds: 2);
 
-  /// F07: modo demonstracao, para reproduzir os cenarios criticos em menos de
-  /// um minuto na frente da banca.
   static const Duration velocidadeAcelerada = Duration(milliseconds: 300);
 
   final RepositorioFazenda _repositorio;
@@ -31,10 +24,8 @@ class ServicoSimulacao {
   Timer? _relogio;
   Duration _intervalo = velocidadeNormal;
 
-  /// Canal que o WebSocket consome para empurrar o estado a cada ciclo.
   Stream<Telemetria> get atualizacoes => _atualizacoes.stream;
 
-  /// Decisoes recem tomadas, na ordem em que aconteceram.
   Stream<Evento> get novosEventos => _novosEventos.stream;
 
   Telemetria get telemetria => _repositorio.telemetria;
@@ -54,7 +45,6 @@ class ServicoSimulacao {
     await _novosEventos.close();
   }
 
-  /// Pausa os ciclos sem encerrar os canais do servidor.
   void pausar() {
     if (_relogio == null) return;
     _relogio?.cancel();
@@ -70,7 +60,6 @@ class ServicoSimulacao {
     ]);
   }
 
-  /// RF12 e F07.
   void definirVelocidade({required bool acelerada}) {
     _intervalo = acelerada ? velocidadeAcelerada : velocidadeNormal;
     _registrar([
@@ -87,8 +76,6 @@ class ServicoSimulacao {
     iniciar();
   }
 
-  /// RN13: chuva manual. O servico so encaminha o comando para a regra e
-  /// guarda o resultado, como faz com qualquer outra decisao.
   void definirChuva({required bool chovendo}) {
     final decisao =
         regras.definirChuva(_repositorio.telemetria, chovendo, DateTime.now());
@@ -96,7 +83,6 @@ class ServicoSimulacao {
     _registrar(decisao.eventos);
   }
 
-  /// F12.
   void reiniciar() {
     _repositorio.reiniciar();
     _registrar([
@@ -110,8 +96,6 @@ class ServicoSimulacao {
     ]);
   }
 
-  /// RF03 e RN08. Devolve o motivo quando o servidor recusa, para que a rota
-  /// responda 409 com a mensagem que a interface vai exibir tal como veio.
   String? acionarBomba(String bombaId, {required bool ligar}) {
     final decisao = avaliarComandoManual(
         _repositorio.telemetria, bombaId, ligar, DateTime.now());

@@ -1,8 +1,3 @@
-/// Painel de monitoramento. Só desenha e envia comandos.
-///
-/// Nenhuma decisão de automação acontece aqui: as faixas de alerta vêm
-/// calculadas do servidor e a recusa de comando vem com a mensagem que o
-/// servidor devolveu.
 library;
 
 import 'package:compartilhado/modelos.dart';
@@ -14,22 +9,12 @@ import '../../eventos/apresentacao/tela_eventos.dart';
 import 'comando_bloc.dart';
 import 'telemetria_bloc.dart';
 
-/// Acima disto o conteúdo para de crescer e se centraliza. O fundo continua
-/// cobrindo a janela inteira.
 const double _larguraMaxima = 1100;
 
-/// Abaixo disto o cartão do reservatório deixa de ser duas colunas.
 const double _corteColunas = 700;
 
-/// Abaixo disto é tela de celular: números menores, cartões com menos respiro e
-/// o cabeçalho em duas linhas. Nada de lógica muda, só o que cabe na tela.
 const double _corteCelular = 480;
 
-/// Abaixo disto o cabeçalho vai para duas linhas. É um corte próprio, e maior
-/// que o de celular, porque quem manda aqui é a largura do nome do aplicativo:
-/// a Matcha Home é bem mais larga que a fonte de interface e, na mesma linha
-/// que o estado de conexão e os cinco botões, o nome era truncado bem antes
-/// dos 480.
 const double _corteCabecalho = 600;
 
 const double _opacidadeDoVeu = 0.42;
@@ -170,9 +155,6 @@ class _Painel extends StatelessWidget {
                               ),
                               const SizedBox(height: Espaco.g),
 
-                              // Sem contato, o bloqueio que a tela mostra é
-                              // informação velha: o aviso de defasagem vence e o de
-                              // bloqueio sai.
                               if (desconectado)
                                 _FaixaDefasagem(
                                   'Defasado desde ${_hora(telemetria.hora)}. '
@@ -203,8 +185,7 @@ class _Painel extends StatelessWidget {
                               _ListaTalhoes(
                                 celular: celular,
                                 telemetria: telemetria,
-                                // RF11. O servidor recusa de qualquer jeito (RN08);
-                                // travar aqui é conveniência, não segurança.
+
                                 travado: bloqueado || desconectado,
                                 aoAlternar: (bomba, ligar) => comandos.add(
                                   AcionamentoSolicitado(bomba.id, ligar: ligar),
@@ -249,8 +230,6 @@ class _FundoDoPomar extends StatelessWidget {
   );
 }
 
-/// Uma linha: título à esquerda, estado e ações à direita, e embaixo a linha
-/// de contexto em texto terciário.
 class _Topo extends StatelessWidget {
   const _Topo({
     required this.celular,
@@ -299,8 +278,7 @@ class _Topo extends StatelessWidget {
     );
 
     final acoes = <Widget>[
-      // RN13: chuva manual. Aceso enquanto está chovendo, para o botão ser
-      // também o indicador de que o modo está ligado.
+
       _Acao(
         chovendo ? Icons.water : Icons.water_outlined,
         chovendo ? 'Encerrar chuva' : 'Simular chuva',
@@ -314,8 +292,6 @@ class _Topo extends StatelessWidget {
       _Acao(Icons.restart_alt, 'Reiniciar cenário', aoReiniciar),
     ];
 
-    // Em celular a linha de contexto fica só com a hora da fazenda: o horário
-    // da última leitura não cabe junto e é o menos útil dos dois lá.
     final contexto = Text(
       celular
           ? 'Monitoramento de irrigação  ·  '
@@ -412,8 +388,6 @@ class _Acao extends StatelessWidget {
   );
 }
 
-/// Ponto que pulsa devagar enquanto o canal está de pé. Ele não mente: quando
-/// quem entrega as leituras é a consulta de reserva, o texto muda.
 class _Conexao extends StatefulWidget {
   const _Conexao({required this.desconectado, required this.emTempoReal});
 
@@ -465,8 +439,6 @@ class _ConexaoState extends State<_Conexao>
   }
 }
 
-/// Tira de uma linha. O ponto do topo já diz que o contato caiu; repetir isso
-/// em um bloco grande é redundância, não ênfase.
 class _FaixaDefasagem extends StatelessWidget {
   const _FaixaDefasagem(this.texto);
 
@@ -526,9 +498,7 @@ class _FaixaBloqueio extends StatelessWidget {
           style: Fontes.corpo(Cores.texto, tamanho: 16),
         ),
         const SizedBox(height: Espaco.m),
-        // Passo 7 do roteiro: com os botões travados não dá para provar que
-        // a recusa vem do servidor. Este passa por cima da trava da interface
-        // e o 409 chega do domínio.
+
         SizedBox(
           height: Interruptor.altura,
           width: double.infinity,
@@ -571,7 +541,7 @@ class _CartaoReservatorio extends StatelessWidget {
       children: [
         Text('RESERVATÓRIO', style: Fontes.secao()),
         const SizedBox(height: Espaco.p),
-        // Uma linha, um número: é o que o produtor quer saber de relance.
+
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
@@ -585,8 +555,7 @@ class _CartaoReservatorio extends StatelessWidget {
         PontoEstado(reservatorio.faixa),
         const SizedBox(height: Espaco.m),
         BarraNivel(fracao: reservatorio.nivel / 100, cor: cor, altura: 14),
-        // RN13: indicador visível enquanto chove, sem cápsula e em caixa
-        // normal, como os outros estados da tela.
+
         if (telemetria.chovendo) ...[
           const SizedBox(height: Espaco.m),
           Row(
@@ -658,13 +627,6 @@ class _CartaoReservatorio extends StatelessWidget {
   }
 }
 
-/// Doze barras, uma por hora de sol, com a altura vinda da mesma senoide que
-/// alimenta a RN12. A hora atual fica em âmbar, o resto em cinza: nenhuma série
-/// precisa ser guardada para desenhar isto.
-///
-/// Desenhado em CustomPaint em vez de montado com widgets: encadear Expanded,
-/// Align e Container para doze barras rendeu alturas todas iguais, e aqui cada
-/// retângulo é explícito.
 class _BarrasSolares extends StatelessWidget {
   const _BarrasSolares({required this.telemetria, required this.altura});
 
@@ -748,8 +710,7 @@ class _ListaTalhoes extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (_, limites) {
-      // Cartao alto e largo, um por talhao. Lista densa lê bem sentado na
-      // frente do monitor e mal de pé no pomar com o sol na tela.
+
       final colunas = limites.maxWidth >= _corteColunas ? 2 : 1;
       final largura = (limites.maxWidth - Espaco.m * (colunas - 1)) / colunas;
 
@@ -789,8 +750,6 @@ class _LinhaTalhao extends StatelessWidget {
   final bool travado;
   final void Function(Bomba, bool) aoAlternar;
 
-  /// Diz o tempo todo de quem partiu o que está acontecendo, que é a tese
-  /// central do projeto: a autonomia mora no servidor.
   String get _situacao =>
       switch ((bomba.ligada, bomba.origemUltimoAcionamento)) {
         (false, _) => 'Aguardando',
@@ -857,8 +816,7 @@ class _LinhaTalhao extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: celular ? Espaco.p : Espaco.m),
-          // Alinhado à direita: o botão tem a largura do próprio rótulo, e o
-          // canto de leitura do cartão continua sendo a esquerda.
+
           Align(
             alignment: Alignment.centerRight,
             child: Interruptor(
