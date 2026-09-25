@@ -8,9 +8,7 @@ import 'package:compartilhado/modelos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../eventos/apresentacao/eventos_bloc.dart';
 import '../../eventos/apresentacao/tela_eventos.dart';
-import '../../../nucleo/injecao.dart';
 import 'comando_bloc.dart';
 import 'telemetria_bloc.dart';
 
@@ -84,13 +82,8 @@ class _Painel extends StatelessWidget {
           IconButton(
             tooltip: 'Historico de decisoes',
             icon: const Icon(Icons.history),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => BlocProvider(
-                create: (_) =>
-                    servicos<EventosBloc>()..add(const HistoricoAberto()),
-                child: const TelaEventos(),
-              ),
-            )),
+            onPressed: () =>
+                Navigator.of(context).pushNamed(TelaEventos.rota),
           ),
           IconButton(
             tooltip: 'Modo demonstracao',

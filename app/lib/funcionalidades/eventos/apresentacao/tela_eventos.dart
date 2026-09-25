@@ -44,6 +44,8 @@ String _hora(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:'
 class TelaEventos extends StatelessWidget {
   const TelaEventos({super.key});
 
+  static const String rota = '/eventos';
+
   @override
   Widget build(BuildContext context) {
     final bloc = context.read<EventosBloc>();
