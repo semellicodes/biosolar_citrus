@@ -18,6 +18,11 @@ const _cores = {
 };
 
 /// RNF04: o estado critico precisa ser identificavel sem depender so da cor.
+String _horaDe(DateTime instante) =>
+    '${instante.hour.toString().padLeft(2, '0')}:'
+    '${instante.minute.toString().padLeft(2, '0')}:'
+    '${instante.second.toString().padLeft(2, '0')}';
+
 const _rotulos = {
   Faixa.verde: 'Normal',
   Faixa.amarelo: 'Atencao',
@@ -96,10 +101,15 @@ class _Painel extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 if (desconectado)
-                  const _Aviso(
+                  // RNF05. Numero velho sem aviso e pior que tela vazia num
+                  // painel que a banca olha procurando tempo real, entao o
+                  // aviso diz de quando e a leitura e que ela nao anda mais.
+                  _Aviso(
                     icone: Icons.cloud_off,
-                    texto: 'Desconectado. Exibindo a ultima leitura conhecida.',
-                    cor: Color(0xFF616161),
+                    texto: 'SEM CONTATO COM O SERVIDOR. Dados defasados, '
+                        'parados na leitura das '
+                        '${_horaDe(telemetria.hora)}. Reconectando...',
+                    cor: const Color(0xFF616161),
                   ),
                 if (telemetria.reservatorio.bloqueioAtivo)
                   // RF11: o bloqueio e sinalizado e os interruptores travam.
@@ -139,7 +149,8 @@ class _Painel extends StatelessWidget {
                   _LinhaTalhao(
                     talhao: talhao,
                     bomba: telemetria.bombaDo(talhao.id),
-                    bloqueado: telemetria.reservatorio.bloqueioAtivo,
+                    bloqueado:
+                        telemetria.reservatorio.bloqueioAtivo || desconectado,
                     aoAlternar: (bomba, ligar) => comandos
                         .add(AcionamentoSolicitado(bomba.id, ligar: ligar)),
                   ),

@@ -27,6 +27,7 @@ dart run servidor/bin/servidor.dart --demo   # modo demonstracao, ciclo de 300ms
 | `GET /eventos?limite=&deslocamento=` | Historico de decisoes |
 | `POST /simulacao/velocidade` | `{"acelerada":true}` liga o modo demonstracao |
 | `POST /simulacao/reset` | Devolve a simulacao ao estado inicial |
+| `WS /stream` | Empurra a telemetria a cada ciclo |
 
 ## Regras
 
@@ -58,6 +59,22 @@ O sistema nao desliga uma bomba que o operador ligou, nem quando a umidade ja
 passou do patamar de seguranca. Ele registra um alerta de desperdicio no
 historico e deixa a decisao com quem a tomou. So o bloqueio de emergencia
 derruba bomba de operador, que e o que o caderno chama de irrestrito.
+
+## Conexao
+
+O aplicativo escuta o `WS /stream`. Quando o canal cai ou nem abre, a consulta
+REST de reserva assume na hora, no mesmo ritmo de dois segundos que o app usava
+antes de existir canal, e a reconexao do WebSocket fica tentando por baixo com
+espera crescente de 1s, 2s, 4s e teto de 5s. O REST nunca foi removido
+justamente para ser esse caminho de volta.
+
+Se nem o canal nem a consulta respondem, a tela mantem a ultima leitura
+conhecida, avisa em faixa que os dados estao defasados e diz de que horas e a
+leitura, e trava os interruptores. Numero velho sem aviso e pior que tela
+vazia num painel que se propoe a mostrar tempo real.
+
+Conferido na mao: com o aplicativo aberto, derrubar o servidor e subir de novo
+faz o painel voltar sozinho, sem recarregar a pagina.
 
 ## Limitacao conhecida
 

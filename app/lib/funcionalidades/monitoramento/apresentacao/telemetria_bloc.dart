@@ -9,7 +9,6 @@ import 'dart:async';
 import 'package:compartilhado/modelos.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../nucleo/falhas.dart';
 import '../dominio/contratos.dart';
 
 sealed class EventoTelemetria {
@@ -20,15 +19,15 @@ class MonitoramentoIniciado extends EventoTelemetria {
   const MonitoramentoIniciado();
 }
 
-/// Telemetria que chegou de fora, por consulta ou por resposta de comando.
-/// Quando o WebSocket entrar, e por aqui que o canal vai empurrar o estado.
+/// Telemetria que chegou de fora: empurrada pelo canal, trazida pela consulta
+/// de reserva ou devolvida por um comando aceito. O bloc nao distingue.
 class TelemetriaRecebida extends EventoTelemetria {
   const TelemetriaRecebida(this.telemetria);
   final Telemetria telemetria;
 }
 
-class _ConsultaDisparada extends EventoTelemetria {
-  const _ConsultaDisparada();
+class ContatoPerdido extends EventoTelemetria {
+  const ContatoPerdido();
 }
 
 sealed class EstadoTelemetria {
@@ -61,38 +60,32 @@ class TelemetriaDesconectada extends EstadoTelemetria {
 }
 
 class TelemetriaBloc extends Bloc<EventoTelemetria, EstadoTelemetria> {
-  TelemetriaBloc(this._leitor, {this.intervalo = const Duration(seconds: 2)})
-      : super(const TelemetriaCarregando()) {
+  TelemetriaBloc(this._fonte) : super(const TelemetriaCarregando()) {
     on<MonitoramentoIniciado>((_, _) {
-      _relogio?.cancel();
-      add(const _ConsultaDisparada());
-      _relogio = Timer.periodic(intervalo, (_) => add(const _ConsultaDisparada()));
+      _inscricao?.cancel();
+      _inscricao = _fonte.atualizacoes.listen(
+        (telemetria) => add(TelemetriaRecebida(telemetria)),
+        onError: (_) => add(const ContatoPerdido()),
+      );
+      _fonte.conectar();
     });
 
-    on<_ConsultaDisparada>((_, emit) async {
-      try {
-        emit(TelemetriaCarregada(await _leitor.obterTelemetria()));
-      } on Falha {
-        emit(TelemetriaDesconectada(state.ultima));
-      }
-    });
+    on<TelemetriaRecebida>(
+        (evento, emit) => emit(TelemetriaCarregada(evento.telemetria)));
 
-    on<TelemetriaRecebida>((evento, emit) =>
-        emit(TelemetriaCarregada(evento.telemetria)));
+    on<ContatoPerdido>((_, emit) => emit(TelemetriaDesconectada(state.ultima)));
   }
 
-  final LeitorTelemetria _leitor;
+  final FonteTelemetria _fonte;
 
-  /// RNF03: a tela reflete uma mudanca em menos de dois segundos.
-  final Duration intervalo;
-
-  Timer? _relogio;
+  StreamSubscription<Telemetria>? _inscricao;
 
   @override
   Future<void> close() {
     // Sem isto o aplicativo vaza memoria e ainda tenta emitir estado depois de
     // a tela ter sido destruida.
-    _relogio?.cancel();
+    _inscricao?.cancel();
+    _fonte.encerrar();
     return super.close();
   }
 }

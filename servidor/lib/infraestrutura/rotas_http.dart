@@ -9,6 +9,7 @@ import 'package:shelf_router/shelf_router.dart';
 
 import '../aplicacao/servico_simulacao.dart';
 import '../dominio/repositorio_fazenda.dart';
+import 'canal_websocket.dart';
 
 Response _json(Object corpo, {int status = 200}) => Response(
       status,
@@ -80,6 +81,10 @@ Handler criarRotas(ServicoSimulacao simulacao, RepositorioFazenda repositorio) {
       'intervaloMs': simulacao.intervalo.inMilliseconds,
     });
   });
+
+  // Canal em tempo real. O REST continua inteiro no ar de proposito: e o
+  // fallback do aplicativo quando o WebSocket nao abre ou cai.
+  rotas.get('/stream', canalWebSocket(simulacao));
 
   // F12
   rotas.post('/simulacao/reset', (Request _) {

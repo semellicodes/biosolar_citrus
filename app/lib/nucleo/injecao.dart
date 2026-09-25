@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import '../funcionalidades/monitoramento/apresentacao/comando_bloc.dart';
 import '../funcionalidades/monitoramento/apresentacao/telemetria_bloc.dart';
 import '../funcionalidades/monitoramento/dados/api_fazenda.dart';
+import '../funcionalidades/monitoramento/dados/canal_fazenda.dart';
 import '../funcionalidades/monitoramento/dominio/contratos.dart';
 
 final GetIt servicos = GetIt.instance;
@@ -27,6 +28,7 @@ void registrarDependencias() {
   // subir servidor.
   servicos.registerLazySingleton<LeitorTelemetria>(() => servicos<ApiFazenda>());
   servicos.registerLazySingleton<EmissorComando>(() => servicos<ApiFazenda>());
+  servicos.registerFactory<FonteTelemetria>(() => CanalFazenda(servicos()));
 
   // Fabrica: cada tela recebe um bloc novo, evitando estado compartilhado
   // indevido entre telas.

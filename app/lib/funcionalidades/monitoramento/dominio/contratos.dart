@@ -11,6 +11,17 @@ abstract interface class LeitorTelemetria {
   Future<List<Evento>> obterEventos({int limite, int deslocamento});
 }
 
+/// Fonte contínua de telemetria. Quem consome nao sabe nem precisa saber se o
+/// que chega veio do canal em tempo real ou da consulta de reserva.
+abstract interface class FonteTelemetria {
+  /// Emite cada leitura nova. Emite erro quando a fonte perde contato, mas
+  /// nunca fecha: o proprio canal cuida de voltar sozinho.
+  Stream<Telemetria> get atualizacoes;
+
+  void conectar();
+  Future<void> encerrar();
+}
+
 abstract interface class EmissorComando {
   /// Lanca [FalhaBloqueio] quando o servidor recusa com 409.
   Future<Telemetria> acionarBomba(String bombaId, {required bool ligar});
