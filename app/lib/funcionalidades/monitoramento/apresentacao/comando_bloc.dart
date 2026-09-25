@@ -47,6 +47,10 @@ class ComandoOcioso extends EstadoComando {
   const ComandoOcioso();
 }
 
+class SistemaPausado extends EstadoComando {
+  const SistemaPausado();
+}
+
 class ComandoEnviando extends EstadoComando {
   const ComandoEnviando();
 }
@@ -85,10 +89,12 @@ class ComandoBloc extends Bloc<EventoComando, EstadoComando> {
 
     on<PausaSolicitada>((_, emit) async {
       emit(const ComandoEnviando());
-      await _executar(emit, () async {
+      try {
         await _emissor.pausarSimulacao();
-        return null;
-      });
+        emit(const SistemaPausado());
+      } on Falha catch (falha) {
+        emit(ComandoFalhou(falha.mensagem));
+      }
     });
 
     on<ChuvaSolicitada>((evento, emit) async {

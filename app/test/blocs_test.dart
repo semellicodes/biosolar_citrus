@@ -129,7 +129,7 @@ void main() {
       return ComandoBloc(emissor);
     },
     act: (bloc) => bloc.add(const PausaSolicitada()),
-    expect: () => [isA<ComandoEnviando>(), isA<ComandoOcioso>()],
+    expect: () => [isA<ComandoEnviando>(), isA<SistemaPausado>()],
     verify: (_) => verify(() => emissor.pausarSimulacao()).called(1),
   );
 }

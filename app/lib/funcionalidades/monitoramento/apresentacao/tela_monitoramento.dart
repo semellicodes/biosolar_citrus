@@ -46,6 +46,7 @@ class TelaMonitoramento extends StatelessWidget {
         ComandoAceito(:final telemetria) => telemetriaBloc.add(
           TelemetriaRecebida(telemetria),
         ),
+        SistemaPausado() => _avisarPausa(context),
         ComandoRecusado(:final mensagem) => _avisar(context, mensagem),
         ComandoFalhou(:final mensagem) => _avisar(context, mensagem),
         _ => null,
@@ -72,6 +73,22 @@ class TelaMonitoramento extends StatelessWidget {
           ),
           content: Text(mensagem, style: Fontes.corpo(Cores.texto)),
           duration: const Duration(seconds: 6),
+        ),
+      );
+
+  void _avisarPausa(BuildContext context) =>
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Cores.verde,
+          behavior: SnackBarBehavior.floating,
+          width: 520,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(Raio.card),
+          ),
+          content: Text(
+            'Sistema pausado. Escolha uma velocidade para retomar.',
+            style: Fontes.corpo(Colors.white),
+          ),
         ),
       );
 }
