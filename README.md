@@ -1,21 +1,21 @@
 # BioSolar Citrus
 
-Sistema de automacao hidro energetica para pomares de laranja e limao. Um
+Sistema de automação hidro energética para pomares de laranja e limão. Um
 servidor em Dart simula a fazenda em tempo real, acompanhando a umidade de cada
-talhao e o nivel do reservatorio, e toma sozinho todas as decisoes de irrigacao:
-liga o aspersor quando o solo seca e executa o bloqueio de emergencia
-desligando todas as bombas quando a agua chega ao nivel critico, recusando
+talhão e o nível do reservatório, e toma sozinho todas as decisões de irrigação:
+liga o aspersor quando o solo seca e executa o bloqueio de emergência
+desligando todas as bombas quando a água chega ao nível crítico, recusando
 inclusive os comandos manuais enquanto durar o bloqueio. O aplicativo Flutter
-apenas exibe o que esta acontecendo e envia comandos do operador. **Nenhuma
-regra de automacao mora no aplicativo.** Se o aplicativo for apagado, a fazenda
+apenas exibe o que está acontecendo e envia comandos do operador. **Nenhuma
+regra de automação mora no aplicativo.** Se o aplicativo for apagado, a fazenda
 continua sendo irrigada corretamente.
 
-HackUFRA, V JTI, Caderno de Desafio Opcao 03. Autora: Paula. Universidade
-Federal Rural da Amazonia, Campus Capitao Poco.
+HackUFRA, V JTI, Caderno de Desafio Opção 03. Autora: Paula. Universidade
+Federal Rural da Amazônia, Campus Capitão Poço.
 
 ## Como rodar
 
-Precisa do Flutter, que ja traz o Dart. Desenvolvido e testado no Flutter
+Precisa do Flutter, que já traz o Dart. Desenvolvido e testado no Flutter
 3.44.9 com Dart 3.12. Dois terminais:
 
 ```bash
@@ -28,17 +28,17 @@ dart pub get -C servidor && dart run servidor/bin/servidor.dart
 cd app && flutter pub get && flutter run
 ```
 
-Se nao houver dispositivo conectado, `flutter run -d chrome` abre a versao web,
-que e a mesma base de codigo e serve de plano de contingencia.
+Se não houver dispositivo conectado, `flutter run -d chrome` abre a versão web,
+que é a mesma base de código e serve de plano de contingência.
 
-O servidor sobe na porta 8080 e imprime o estado da fazenda a cada ciclo, entao
-da para ver a simulacao funcionando antes mesmo de abrir o aplicativo. Para
-acelerar a simulacao desde o inicio, use `dart run servidor/bin/servidor.dart
+O servidor sobe na porta 8080 e imprime o estado da fazenda a cada ciclo, então
+dá para ver a simulação funcionando antes mesmo de abrir o aplicativo. Para
+acelerar a simulação desde o início, use `dart run servidor/bin/servidor.dart
 --demo`.
 
-O aplicativo aponta para `http://localhost:8080` por padrao, o que serve para
+O aplicativo aponta para `http://localhost:8080` por padrão, o que serve para
 web, desktop e simulador iOS. No emulador Android troque por `10.0.2.2`, e em
-celular fisico pelo IP da maquina na rede local:
+celular físico pelo IP da máquina na rede local:
 
 ```bash
 flutter run --dart-define=SERVIDOR=http://192.168.0.10:8080
@@ -46,64 +46,74 @@ flutter run --dart-define=SERVIDOR=http://192.168.0.10:8080
 
 ## Telas
 
-Painel em operacao normal. As faixas de alerta aparecem por cor e por texto, o
-arco mostra a posicao do sol no dia simulado e a captacao do momento, e o ponto
-ao lado do titulo diz se a telemetria esta chegando pelo canal em tempo real ou
-pela consulta de reserva:
+Painel em operação normal. As faixas de alerta aparecem por cor e por texto, o
+gráfico mostra a produção solar prevista ao longo do dia simulado com a hora
+atual destacada, e o ponto ao lado do título diz se a telemetria está chegando
+pelo canal em tempo real ou pela consulta de reserva:
 
-![Painel em operacao normal](docs/painel-normal.png)
+![Painel em operação normal](docs/painel-normal.png)
 
-Bloqueio de emergencia ativo. A tela inteira muda de temperatura com o estado do
-reservatorio, os interruptores ficam travados e o botao "Tentar mesmo assim"
-existe para provar, na frente da banca, que a recusa vem do servidor e nao da
+Bloqueio de emergência ativo. A tela inteira muda de temperatura com o estado do
+reservatório, os interruptores ficam travados e o botão "Tentar mesmo assim"
+existe para provar, na frente da banca, que a recusa vem do servidor e não da
 interface:
 
-![Painel com bloqueio de emergencia](docs/painel-bloqueio.png)
+![Painel com bloqueio de emergência](docs/painel-bloqueio.png)
 
-Historico de decisoes. O bloqueio em vermelho aparece no meio da parede azul
-das irrigacoes automaticas, e cada linha diz se a acao partiu do sistema ou do
+Histórico de decisões. O bloqueio em vermelho aparece no meio da parede azul
+das irrigações automáticas, e cada linha diz se a ação partiu do sistema ou do
 operador:
 
-![Historico de decisoes](docs/historico.png)
+![Histórico de decisões](docs/historico.png)
 
-O painel se ajusta a largura disponivel. Os talhoes sao uma lista unica com
-divisorias, e cada linha muda de arranjo conforme o espaco: em tela larga ficam
-tres blocos lado a lado, identificacao, medida e controle; em coluna estreita
-eles empilham. Acima de 1100 pixels o conteudo para de crescer e se centraliza,
+O painel se ajusta à largura disponível. Os talhões são uma lista única com
+divisórias, e cada linha muda de arranjo conforme o espaço: em tela larga ficam
+três blocos lado a lado, identificação, medida e controle; em coluna estreita
+eles empilham. Acima de 1100 pixels o conteúdo para de crescer e se centraliza,
 com o fundo cobrindo a janela inteira.
 
-## Regras de negocio
+## Regras de negócio
 
-Todas as decisoes vivem em [`servidor/lib/dominio/regras/regras.dart`](servidor/lib/dominio/regras/regras.dart),
-como funcoes puras que recebem o estado e devolvem o estado seguinte. Cada
-funcao leva no topo o codigo da regra que implementa.
+Todas as decisões vivem em [`servidor/lib/dominio/regras/regras.dart`](servidor/lib/dominio/regras/regras.dart),
+como funções puras que recebem o estado e devolvem o estado seguinte. Cada
+função leva no topo o código da regra que implementa.
 
-| Codigo | Regra | Limiar ou detalhe | Origem |
+A coluna de origem separa o que o caderno exige do que foi projetado aqui. Onde
+o caderno define o comportamento mas não o número, a linha aparece como caderno
+com calibragem própria, porque o valor foi escolhido para que a demonstração
+funcione e não está no enunciado.
+
+| Código | Regra | Limiar ou detalhe | Origem |
 | --- | --- | --- | --- |
-| RN01 | Queda natural da umidade | 1,2 ponto por ciclo em talhao sem irrigacao | Caderno |
-| RN02 | Recuperacao por irrigacao | 3,0 pontos por ciclo com aspersor ligado | Caderno |
-| RN03 | Consumo do reservatorio | 0,8 por bomba ligada por ciclo | Caderno |
-| RN04 | Irrigacao critica automatica | umidade abaixo de 25% aciona o aspersor | Caderno |
-| RN05 | Encerramento da irrigacao automatica | umidade de volta a 45%, acima do gatilho para criar histerese | Caderno |
-| RN06 | Bloqueio de emergencia | reservatorio abaixo de 15% desliga todas as bombas | Caderno |
-| RN07 | Precedencia | o bloqueio tem prioridade absoluta sobre a irrigacao critica | Decisao de projeto |
-| RN08 | Recusa de comando manual | durante o bloqueio o servidor responde 409 com o motivo | Decisao de projeto |
-| RN09 | Liberacao do bloqueio | reservatorio de volta a 25% | Decisao de projeto |
-| RN10 | Faixas de alerta | verde, amarelo e vermelho, com rotulo escrito junto da cor | Caderno |
-| RN11 | Origem do evento | todo evento identifica se foi operador ou sistema | Decisao de projeto |
-| RN12 | Captacao solar | vazao que acompanha a curva do sol, nula a noite, no pico valendo um quinto do consumo com as quatro bombas ligadas | Decisao de projeto |
+| RN01 | Queda natural da umidade | 1,2 ponto por ciclo em talhão sem irrigação | Caderno, taxa calibrada aqui |
+| RN02 | Recuperação por irrigação | 3,0 pontos por ciclo com aspersor ligado | Caderno, taxa calibrada aqui |
+| RN03 | Consumo do reservatório | 0,8 por bomba ligada por ciclo | Caderno, taxa calibrada aqui |
+| RN04 | Irrigação crítica automática | umidade abaixo de 25% aciona o aspersor | Caderno |
+| RN05 | Encerramento da irrigação automática | umidade de volta a 45%, acima do gatilho para criar histerese | Caderno, patamar e histerese decididos aqui |
+| RN06 | Bloqueio de emergência | reservatório abaixo de 15% desliga todas as bombas | Caderno |
+| RN07 | Precedência | o bloqueio tem prioridade absoluta sobre a irrigação crítica | Decisão de projeto |
+| RN08 | Recusa de comando manual | durante o bloqueio o servidor responde 409 com o motivo | Decisão de projeto |
+| RN09 | Liberação do bloqueio | reservatório de volta a 25% | Decisão de projeto |
+| RN10 | Faixas de alerta | verde, amarelo e vermelho, com rótulo escrito junto da cor | Caderno, fronteiras decididas aqui |
+| RN11 | Origem do evento | todo evento identifica se foi operador ou sistema | Decisão de projeto |
+| RN12 | Captação solar | vazão que acompanha a curva do sol, nula à noite, no pico valendo um quinto do consumo com as quatro bombas ligadas | Decisão de projeto |
 
-### RN12, por que existe captacao solar se o caderno nao pediu
+O caderno define os dois limiares que importam, 25% de umidade e 15% de
+reservatório. Todo o resto, as taxas de queda e recuperação, o consumo por
+bomba, o patamar de histerese e as fronteiras de cor, é calibragem feita para
+que os cenários aconteçam em tempo de demonstração.
 
-O caderno define o consumo do reservatorio, mas nao diz o que o reabastece. Sem
-reposicao, depois do primeiro bloqueio o nivel ficaria parado para sempre e a
-RN09 nunca aconteceria fora dos testes. A captacao solar resolve isso e faz o
-nome do projeto significar alguma coisa: ela segue a curva do sol, e nula a
+### RN12, por que existe captação solar se o caderno não pediu
+
+O caderno define o consumo do reservatório, mas não diz o que o reabastece. Sem
+reposição, depois do primeiro bloqueio o nível ficaria parado para sempre e a
+RN09 nunca aconteceria fora dos testes. A captação solar resolve isso e faz o
+nome do projeto significar alguma coisa: ela segue a curva do sol, é nula à
 noite, e no pico do dia vale um quinto do consumo com as quatro bombas ligadas.
-Ou seja, **ela nunca compensa a irrigacao plena**, entao o reservatorio continua
-caindo ate o bloqueio como o caderno espera. Com as bombas paradas ela repoe
-agua devagar, e e isso que faz a liberacao acontecer ao vivo na demonstracao. O
-valor de calibragem e `Limiares.recargaSolarPico`.
+Ou seja, **ela nunca compensa a irrigação plena**, então o reservatório continua
+caindo até o bloqueio como o caderno espera. Com as bombas paradas ela repõe
+água devagar, e é isso que faz a liberação acontecer ao vivo na demonstração. O
+valor de calibragem é `Limiares.recargaSolarPico`.
 
 ### Contrato da API
 
@@ -111,9 +121,9 @@ valor de calibragem e `Limiares.recargaSolarPico`.
 | --- | --- |
 | `GET /telemetria` | Estado completo da fazenda |
 | `POST /bombas/acionar` | `{"bombaId":"b1","ligar":true}`. Responde **409** durante o bloqueio, com o motivo |
-| `GET /eventos?limite=&deslocamento=` | Historico de decisoes, paginado |
-| `POST /simulacao/velocidade` | `{"acelerada":true}` liga o modo demonstracao |
-| `POST /simulacao/reset` | Devolve a simulacao ao estado inicial |
+| `GET /eventos?limite=&deslocamento=` | Histórico de decisões, paginado |
+| `POST /simulacao/velocidade` | `{"acelerada":true}` liga o modo demonstração |
+| `POST /simulacao/reset` | Devolve a simulação ao estado inicial |
 | `WS /stream` | Empurra a telemetria a cada ciclo |
 
 ## Arquitetura
@@ -138,7 +148,7 @@ valor de calibragem e `Limiares.recargaSolarPico`.
                 |
    +------------v-------------+
    |   MOTOR DE REGRAS        |
-   |   RN01 ate RN11          |
+   |   RN01 ate RN12          |
    +------------+-------------+
                 |
    +------------v-------------+
@@ -148,9 +158,9 @@ valor de calibragem e `Limiares.recargaSolarPico`.
    +--------------------------+
 ```
 
-**Nenhuma decisao acontece no aplicativo.** Ele desenha o que recebe e envia o
-que o operador pede, e ate a cor de cada indicador vem calculada do servidor. A
-prova operacional disso e o botao "Tentar mesmo assim" do painel bloqueado: ele
+**Nenhuma decisão acontece no aplicativo.** Ele desenha o que recebe e envia o
+que o operador pede, e até a cor de cada indicador vem calculada do servidor. A
+prova operacional disso é o botão "Tentar mesmo assim" do painel bloqueado: ele
 passa por cima da trava da interface e o servidor recusa mesmo assim, com 409.
 
 ```
@@ -165,7 +175,7 @@ biosolar_citrus/
 |   +-- test/                        T01 a T12
 |
 +-- app/
-|   +-- lib/nucleo/                  injecao de dependencias e tipos de falha
+|   +-- lib/nucleo/                  injecao de dependencias, tema e falhas
 |   +-- lib/funcionalidades/         monitoramento e eventos, cada um com
 |   |                                dominio, dados e apresentacao
 |   +-- test/                        testes de bloc
@@ -174,30 +184,31 @@ biosolar_citrus/
     +-- lib/modelos.dart             contratos usados pelos dois lados
 ```
 
-A pasta `servidor/lib/dominio/regras/` e a mais importante do repositorio. Ela
-contem apenas decisoes, sem rede e sem interface, e e a primeira coisa a abrir
-quando a pergunta for onde esta determinada exigencia do caderno.
+A pasta `servidor/lib/dominio/regras/` é a mais importante do repositório. Ela
+contém apenas decisões, sem rede e sem interface, e é a primeira coisa a abrir
+quando a pergunta for onde está determinada exigência do caderno.
 
-O aplicativo segue a mesma separacao por camadas dentro de cada funcionalidade.
+O aplicativo segue a mesma separação por camadas dentro de cada funcionalidade.
 Dois detalhes que valem apontar:
 
-- **Leitura e comando sao contratos separados.** `LeitorTelemetria`,
-  `LeitorEventos` e `EmissorComando` sao interfaces distintas, entao uma tela
-  que so observa nao depende de metodos de escrita. O painel nao sabe ler
-  historico e a tela de historico nao sabe ler telemetria.
+- **Leitura e comando são contratos separados.** `LeitorTelemetria`,
+  `LeitorEventos` e `EmissorComando` são interfaces distintas, então uma tela
+  que só observa não depende de métodos de escrita. O painel não sabe ler
+  histórico e a tela de histórico não sabe ler telemetria.
 - **A origem do dado fica escondida da tela.** `CanalFazenda` entrega leituras
-  vindas do WebSocket ou da consulta REST de reserva, e quem consome nao sabe
+  vindas do WebSocket ou da consulta REST de reserva, e quem consome não sabe
   nem precisa saber por qual caminho elas chegaram. Foi isso que permitiu trocar
   polling por tempo real sem mudar uma linha de tela.
 
 ## Testes
 
-Dezesseis testes no total. As regras sao funcoes puras, entao os testes mais
-importantes do projeto sao tambem os mais simples de escrever, sem nenhum objeto
-falso e sem subir servidor.
+Dezesseis testes no total, executados a cada envio pela rotina de integração
+contínua em [`.github/workflows/ci.yaml`](.github/workflows/ci.yaml). As regras
+são funções puras, então os testes mais importantes do projeto são também os
+mais simples de escrever, sem nenhum objeto falso e sem subir servidor.
 
 Cada linha em um subshell, para poder colar as duas de uma vez a partir da raiz
-do repositorio:
+do repositório:
 
 ```bash
 (cd servidor && dart test)
@@ -209,117 +220,117 @@ do repositorio:
 
 | Teste | O que verifica | Regra |
 | --- | --- | --- |
-| T01 | A umidade cai a cada ciclo em talhao sem irrigacao | RN01 |
+| T01 | A umidade cai a cada ciclo em talhão sem irrigação | RN01 |
 | T02 | A umidade sobe a cada ciclo com o aspersor ligado | RN02 |
-| T03 | Consumo proporcional as bombas, contra a captacao solar | RN03 |
-| T04 | A irrigacao aciona sozinha ao cruzar o limite critico | RN04 |
-| T05 | A irrigacao automatica so encerra no patamar de seguranca | RN05 |
+| T03 | Consumo proporcional às bombas, contra a captação solar | RN03 |
+| T04 | A irrigação aciona sozinha ao cruzar o limite crítico | RN04 |
+| T05 | A irrigação automática só encerra no patamar de segurança | RN05 |
 | T06 | O bloqueio desliga todas as bombas ao cruzar o limite | RN06 |
-| T07 | **Reservatorio critico e talhao seco ao mesmo tempo, nenhuma bomba liga** | RN07 |
-| T08 | O comando manual e recusado no bloqueio e devolve o motivo | RN08 |
-| T09 | O bloqueio so e liberado no patamar de seguranca | RN09 |
+| T07 | **Reservatório crítico e talhão seco ao mesmo tempo, nenhuma bomba liga** | RN07 |
+| T08 | O comando manual é recusado no bloqueio e devolve o motivo | RN08 |
+| T09 | O bloqueio só é liberado no patamar de segurança | RN09 |
 | T10 | Todo evento identifica corretamente a origem | RN11 |
-| T11 | A captacao solar segue a curva do sol e nunca compensa a irrigacao plena | RN12 |
-| T12 | A irrigacao manual acima do patamar alerta sem desligar, e alerta uma vez so | RN05 |
+| T11 | A captação solar segue a curva do sol e nunca compensa a irrigação plena | RN12 |
+| T12 | A irrigação manual acima do patamar alerta sem desligar, e alerta uma vez só | RN05 |
 
-O **T07 e o mais valioso da suite**, porque documenta a precedencia entre as duas
-regras criticas do desafio, que e o ponto onde a maioria das implementacoes
-falha. O T12 roda duzentos ciclos ate o solo saturar em 100%, porque e ali que
-um teste de cruzamento ingenuo vira condicao permanente e o alerta viraria spam.
+O **T07 é o mais valioso da suíte**, porque documenta a precedência entre as duas
+regras críticas do desafio, que é o ponto onde a maioria das implementações
+falha. O T12 roda duzentos ciclos até o solo saturar em 100%, porque é ali que
+um teste de cruzamento ingênuo vira condição permanente e o alerta viraria spam.
 
 Os quatro testes de bloc cobrem o que a interface promete: telemetria recebida
-vira estado carregado, a perda de contato nao apaga a ultima leitura conhecida,
-a leitura seguinte reconecta a tela sozinha, e a recusa do servidor chega a
+vira estado carregado, a perda de contato não apaga a última leitura conhecida,
+a leitura seguinte reconecta a tela sozinha, e a recusa do servidor chega à
 interface com a mensagem original.
 
-## Balanco hidrico e regime de escassez
+## Balanço hídrico e regime de escassez
 
-O reservatorio opera em deficit, e isso nao e acidente de calibragem: e o
-cenario que o caderno descreve. Durante a estiagem, a demanda de irrigacao de um
-pomar supera com folga o que a captacao solar consegue repor, e a medicao abaixo
+O reservatório opera em déficit, e isso não é acidente de calibragem: é o
+cenário que o caderno descreve. Durante a estiagem, a demanda de irrigação de um
+pomar supera com folga o que a captação solar consegue repor, e a medição abaixo
 quantifica exatamente isso.
 
-### Os numeros, medidos
+### Os números, medidos
 
-Cada talhao precisa de bomba durante 28,6% do tempo para se manter na faixa
+Cada talhão precisa de bomba durante 28,6% do tempo para se manter na faixa
 segura, porque a umidade sobe 3,0 por ciclo irrigando e cai 1,2 por ciclo sem
-irrigacao, entao `1,2 / (3,0 + 1,2)`. Com quatro talhoes, isso da 1,14 bombas
-ligadas em media, de forma continua.
+irrigação, então `1,2 / (3,0 + 1,2)`. Com quatro talhões, isso dá 1,14 bombas
+ligadas em média, de forma contínua.
 
-| | Calculo | Pontos percentuais por dia |
+| | Cálculo | Pontos percentuais por dia |
 | --- | --- | --- |
-| Captacao solar | `0,64 x media do seno x 48 ciclos de sol` | **19,6** |
-| Consumo da irrigacao | `1,14 bombas x 0,8 x 96 ciclos` | **87,8** |
+| Captação solar | `0,64 x média do seno x 48 ciclos de sol` | **19,6** |
+| Consumo da irrigação | `1,14 bombas x 0,8 x 96 ciclos` | **87,8** |
 | Saldo | | **-68,2** |
 
-**O consumo e cerca de 4,5 vezes a captacao.** O unico momento em que o nivel
-sobe e durante o bloqueio, com todas as bombas desligadas, e por isso o sistema
-se estabiliza oscilando entre 13% e 25%: e o unico equilibrio possivel com esta
+**O consumo é cerca de 4,5 vezes a captação.** O único momento em que o nível
+sobe é durante o bloqueio, com todas as bombas desligadas, e por isso o sistema
+se estabiliza oscilando entre 13% e 25%: é o único equilíbrio possível com esta
 fazenda.
 
-Observado em execucao, com a simulacao acelerada:
+Observado em execução, com a simulação acelerada:
 
-| Hora simulada | Nivel | Bloqueio | Bombas |
+| Hora simulada | Nível | Bloqueio | Bombas |
 | --- | --- | --- | --- |
 | 12h | 24,7% | ativo | 0 |
 | 13h | 17,7% | liberado | 4 |
 | 14h | 13,6% | ativo | 0 |
-| 18h as 6h | 18,2% | ativo | 0 |
+| 18h às 6h | 18,2% | ativo | 0 |
 | 8h | 19,7% | ativo | 0 |
 
-O bloqueio e liberado quando a captacao leva o nivel aos 25%, as quatro bombas
-ligam de uma vez nos talhoes secos e derrubam onze pontos em uma hora simulada,
-e o bloqueio volta. A noite o nivel fica parado, porque a captacao e solar.
+O bloqueio é liberado quando a captação leva o nível aos 25%, as quatro bombas
+ligam de uma vez nos talhões secos e derrubam onze pontos em uma hora simulada,
+e o bloqueio volta. À noite o nível fica parado, porque a captação é solar.
 
 ### O que isso quer dizer
 
-**A fazenda e subdimensionada para irrigacao plena.** Dimensionar reservatorio e
-captacao para a demanda do pomar e decisao de projeto agronomico, nao de
-software: envolve area irrigada, cultura, evapotranspiracao local e orcamento de
-painel solar. O papel do sistema de automacao diante de uma fazenda assim e
-exatamente o que ele faz, que e **impedir que o reservatorio zere**, irrigando
-enquanto ha agua e travando tudo quando nao ha.
+**A fazenda é subdimensionada para irrigação plena.** Dimensionar reservatório e
+captação para a demanda do pomar é decisão de projeto agronômico, não de
+software: envolve área irrigada, cultura, evapotranspiração local e orçamento de
+painel solar. O papel do sistema de automação diante de uma fazenda assim é
+exatamente o que ele faz, que é **impedir que o reservatório zere**, irrigando
+enquanto há água e travando tudo quando não há.
 
-Uma calibragem alternativa, se o objetivo fosse um cenario que se recupera em
+Uma calibragem alternativa, se o objetivo fosse um cenário que se recupera em
 vez de oscilar, seria mexer no estado inicial em vez das taxas: partir de
-talhoes bem secos para o bloqueio acontecer logo no comeco, e reduzir o consumo
-por bomba para que a fazenda se sustente depois disso. Os numeros atuais foram
-escolhidos para que o bloqueio aconteca de forma confiavel na demonstracao.
+talhões bem secos para o bloqueio acontecer logo no começo, e reduzir o consumo
+por bomba para que a fazenda se sustente depois disso. Os números atuais foram
+escolhidos para que o bloqueio aconteça de forma confiável na demonstração.
 
-### Irrigacao sem priorizacao
+### Irrigação sem priorização
 
-O sistema trata todos os talhoes com igualdade, entao quando o bloqueio e
-liberado todos os que estiverem abaixo do gatilho sao irrigados ao mesmo tempo.
-Uma regra de priorizacao por criticidade, irrigando apenas o talhao mais seco
+O sistema trata todos os talhões com igualdade, então quando o bloqueio é
+liberado todos os que estiverem abaixo do gatilho são irrigados ao mesmo tempo.
+Uma regra de priorização por criticidade, irrigando apenas o talhão mais seco
 abaixo de um patamar de conforto, suavizaria a queda e entraria como mais uma
-funcao no mesmo modulo de regras, sem tocar em transporte nem em interface.
+função no mesmo módulo de regras, sem tocar em transporte nem em interface.
 
-Vale a ressalva de que ela **nao elimina o deficit**: como a manutencao dos
-quatro talhoes exige 1,14 bombas em media, uma bomba de cada vez nao da conta do
-pomar inteiro. O problema e de dimensionamento, e a priorizacao trata do
+Vale a ressalva de que ela **não elimina o déficit**: como a manutenção dos
+quatro talhões exige 1,14 bombas em média, uma bomba de cada vez não dá conta do
+pomar inteiro. O problema é de dimensionamento, e a priorização trata do
 sintoma.
 
-### Pausa noturna da captacao
+### Pausa noturna da captação
 
-A noite a captacao solar e zero e o reservatorio fica parado ate o amanhecer
-simulado. Nao e defeito, e o comportamento esperado de um sistema movido a sol,
-e o painel diz isso com todas as letras. Se a demonstracao cair num horario
-simulado ruim, o botao de reiniciar cenario devolve a fazenda para a manha.
+À noite a captação solar é zero e o reservatório fica parado até o amanhecer
+simulado. Não é defeito, é o comportamento esperado de um sistema movido a sol,
+e o painel diz isso com todas as letras. Se a demonstração cair num horário
+simulado ruim, o botão de reiniciar cenário devolve a fazenda para a manhã.
 
-### Sem persistencia
+### Sem persistência
 
-O estado vive na memoria do servidor e o historico tem teto de 500 eventos,
-descartando os mais antigos. Reiniciar o servidor zera a simulacao. E uma
-decisao alinhada ao caderno, que proibe persistencia local e nao exige banco de
+O estado vive na memória do servidor e o histórico tem teto de 500 eventos,
+descartando os mais antigos. Reiniciar o servidor zera a simulação. É uma
+decisão alinhada ao caderno, que proíbe persistência local e não exige banco de
 dados.
 
-## Evolucao futura
+## Evolução futura
 
-Em uma versao com pomar real, a camada de simulacao daria lugar a leitura de
-sensores de umidade de solo e boia de nivel, e as bombas passariam a ser
-acionadas por rele, sem que o motor de regras precisasse mudar, porque ele ja
-recebe estado e devolve decisao sem saber de onde o estado veio. Junto com isso
-entrariam a priorizacao por criticidade descrita acima, o balanco energetico
+Em uma versão com pomar real, a camada de simulação daria lugar à leitura de
+sensores de umidade de solo e boia de nível, e as bombas passariam a ser
+acionadas por relé, sem que o motor de regras precisasse mudar, porque ele já
+recebe estado e devolve decisão sem saber de onde o estado veio. Junto com isso
+entrariam a priorização por criticidade descrita acima, o balanço energético
 solar completo, indicando as janelas em que irrigar sai mais barato, e um
-historico persistente para analise de safra, que hoje nao existe apenas porque
-a restricao de persistencia do desafio nao permite.
+histórico persistente para análise de safra, que hoje não existe apenas porque
+a restrição de persistência do desafio não permite.

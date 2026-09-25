@@ -1,0 +1,93 @@
+# Integracao continua do BioSolar Citrus.
+#
+# A ordem importa: nenhuma versao do aplicativo e gerada com teste quebrado,
+# porque a geracao so acontece depois que analise e testes dos dois lados
+# passaram.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  regras:
+    name: Servidor, analise e testes das regras
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Dependencias
+        run: |
+          dart pub get -C compartilhado
+          dart pub get -C servidor
+
+      - name: Analise estatica
+        run: dart analyze compartilhado servidor
+
+      - name: Testes das regras de negocio, T01 a T12
+        run: dart test
+        working-directory: servidor
+
+  aplicativo:
+    name: Aplicativo, analise e testes de bloc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+
+      - name: Dependencias
+        run: flutter pub get
+        working-directory: app
+
+      - name: Analise estatica
+        run: flutter analyze
+        working-directory: app
+
+      - name: Testes de bloc
+        run: flutter test
+        working-directory: app
+
+  versoes:
+    name: Versoes de teste
+    needs: [regras, aplicativo]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Dependencias
+        run: flutter pub get
+        working-directory: app
+
+      - name: Versao Android
+        run: flutter build apk --release
+        working-directory: app
+
+      - name: Versao web, contingencia da apresentacao
+        run: flutter build web --release
+        working-directory: app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: biosolar-citrus-android
+          path: app/build/app/outputs/flutter-apk/app-release.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: biosolar-citrus-web
+          path: app/build/web
