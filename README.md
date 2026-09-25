@@ -66,10 +66,11 @@ operador:
 
 ![Historico de decisoes](docs/historico.png)
 
-O painel se ajusta a largura disponivel: em celular e coluna unica, acima de
-700 pixels os talhoes viram duas colunas, e acima de 1100 o reservatorio ocupa
-a faixa superior inteira com o arco solar grande e os talhoes vao para tres
-colunas.
+O painel se ajusta a largura disponivel. Os talhoes sao uma lista unica com
+divisorias, e cada linha muda de arranjo conforme o espaco: em tela larga ficam
+tres blocos lado a lado, identificacao, medida e controle; em coluna estreita
+eles empilham. Acima de 1100 pixels o conteudo para de crescer e se centraliza,
+com o fundo cobrindo a janela inteira.
 
 ## Regras de negocio
 

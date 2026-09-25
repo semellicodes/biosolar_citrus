@@ -14,7 +14,7 @@ import 'eventos_bloc.dart';
 const _vermelho = Cores.vermelho;
 const _azul = Color(0xFF4EA8F5);
 const _amarelo = Cores.ambar;
-const _cinza = Cores.textoFraco;
+const _cinza = Cores.textoSecundario;
 
 /// Cor e ícone por tipo, para achar o bloqueio no meio da lista sem ler.
 ({Color cor, IconData icone}) _aparencia(TipoEvento tipo) => switch (tipo) {
@@ -55,7 +55,7 @@ class TelaEventos extends StatelessWidget {
       appBar: AppBar(
         title: Text('Histórico de decisões',
             style: Fontes.titulo(Cores.texto, tamanho: 18)),
-        iconTheme: const IconThemeData(color: Cores.textoFraco),
+        iconTheme: const IconThemeData(color: Cores.textoSecundario),
       ),
       body: BlocBuilder<EventosBloc, EstadoHistorico>(
         builder: (context, estado) {
@@ -65,30 +65,23 @@ class TelaEventos extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: Espaco.m, vertical: Espaco.p),
               child: Row(children: [
-                for (final (rotulo, origem) in const [
-                  ('Tudo', null),
-                  ('Sistema', Origem.sistema),
-                  ('Operador', Origem.operador),
-                ])
-                  Padding(
-                    padding: const EdgeInsets.only(right: Espaco.p),
-                    child: ChoiceChip(
-                      label: Text(rotulo,
-                          style: Fontes.corpo(
-                              estado.filtro == origem
-                                  ? Cores.fundo
-                                  : Cores.texto,
-                              tamanho: 12)),
-                      selected: estado.filtro == origem,
-                      selectedColor: Cores.verde,
-                      backgroundColor: Cores.superficie,
-                      side: const BorderSide(color: Cores.borda),
-                      showCheckmark: false,
-                      onSelected: (_) => bloc.add(FiltroAlterado(origem)),
-                    ),
-                  ),
+                Segmentado(
+                  opcoes: const ['Tudo', 'Sistema', 'Operador'],
+                  selecionado: switch (estado.filtro) {
+                    null => 0,
+                    Origem.sistema => 1,
+                    Origem.operador => 2,
+                  },
+                  aoSelecionar: (indice) => bloc.add(FiltroAlterado(
+                      switch (indice) {
+                        1 => Origem.sistema,
+                        2 => Origem.operador,
+                        _ => null,
+                      })),
+                ),
                 const Spacer(),
-                Text('${visiveis.length}', style: Fontes.rotulo(_cinza)),
+                Text('${visiveis.length} eventos',
+                    style: Fontes.corpo(Cores.textoTerciario, tamanho: 12)),
               ]),
             ),
             const Divider(height: 1),
@@ -156,12 +149,12 @@ class _Linha extends StatelessWidget {
             decoration: BoxDecoration(
               color: doSistema ? aparencia.cor : Colors.transparent,
               border: Border.all(color: doSistema ? aparencia.cor : Cores.borda),
-              borderRadius: BorderRadius.circular(Espaco.xs),
+              borderRadius: BorderRadius.circular(Raio.interno - 2),
             ),
             child: Text(
-              doSistema ? 'SISTEMA' : 'OPERADOR',
-              style: Fontes.rotulo(doSistema ? Cores.fundo : _cinza)
-                  .copyWith(fontSize: 9),
+              doSistema ? 'Sistema' : 'Operador',
+              style: Fontes.corpo(doSistema ? Cores.fundo : _cinza,
+                  tamanho: 10),
             ),
           ),
         ],

@@ -1,17 +1,13 @@
-/// Tema do painel: sala de controle, escuro e sem enfeite que nao seja dado.
+/// Tokens do painel. Cor, espaço, raio e tipografia vivem só aqui.
 ///
-/// Um arquivo so, porque cor e espacamento espalhados pela arvore de widgets
-/// sao o comeco de uma interface que ninguem consegue ajustar depois.
+/// Sala de controle, não produto de consumo: estados dessaturados, raio curto,
+/// caixa alta apenas em título de seção.
 library;
-
-
 
 import 'package:compartilhado/modelos.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Escala fixa de espacamento. Toda margem e todo respiro do aplicativo sai
-/// daqui, nunca de um numero solto no meio do widget.
 abstract final class Espaco {
   static const double xs = 4;
   static const double p = 8;
@@ -20,65 +16,89 @@ abstract final class Espaco {
   static const double xg = 32;
 }
 
+/// Dois valores, e só. Card e elemento interno. Raio grande foi removido de
+/// propósito, para não voltar por acidente.
+abstract final class Raio {
+  static const double card = 10;
+  static const double interno = 6;
+}
+
 abstract final class Cores {
   static const Color fundo = Color(0xFF0D1117);
-  static const Color superficie = Color(0xFF161C24);
-  static const Color borda = Color(0xFF232C36);
-  static const Color texto = Color(0xFFE8EDF2);
-  static const Color textoFraco = Color(0xFF8A97A5);
+  static const Color superficie = Color(0xFF12171F);
 
-  /// A paleta esta amarrada ao estado, nao ao gosto.
-  static const Color verde = Color(0xFF3DD68C);
-  static const Color ambar = Color(0xFFF5B841);
-  static const Color vermelho = Color(0xFFF2545B);
+  /// Um tom acima da superfície, para faixas e realces discretos.
+  static const Color superficieAlta = Color(0xFF1A212B);
+  static const Color borda = Color(0xFF1F2630);
+
+  /// Cinza de gráfico. A cor de borda desaparece sobre a superfície do card, e
+  /// uma barra que não se distingue do fundo não informa nada.
+  static const Color grafico = Color(0xFF39434F);
+
+  static const Color texto = Color(0xFFE6EDF3);
+  static const Color textoSecundario = Color(0xFF8B949E);
+  static const Color textoTerciario = Color(0xFF6E7681);
+
+  /// Estados dessaturados. Neon é metade da cara de template.
+  static const Color verde = Color(0xFF3FB950);
+  static const Color ambar = Color(0xFFD29922);
+  static const Color vermelho = Color(0xFFF85149);
 
   static Color da(Faixa faixa) => switch (faixa) {
         Faixa.verde => verde,
         Faixa.amarelo => ambar,
         Faixa.vermelho => vermelho,
       };
+
+  /// Opacidade da temperatura ambiente da tela por estado (item 9).
+  static double brilhoDa(Faixa faixa) => switch (faixa) {
+        Faixa.verde => 0,
+        Faixa.amarelo => 0.04,
+        Faixa.vermelho => 0.08,
+      };
 }
 
-/// RNF04: o estado critico e identificavel por texto, nao so por cor.
+/// RNF04: o estado é identificável por texto, não só por cor. Em caixa normal.
 const Map<Faixa, String> rotulos = {
-  Faixa.verde: 'NORMAL',
-  Faixa.amarelo: 'ATENÇÃO',
-  Faixa.vermelho: 'CRÍTICO',
+  Faixa.verde: 'Normal',
+  Faixa.amarelo: 'Atenção',
+  Faixa.vermelho: 'Crítico',
 };
 
-/// Numeros que mudam a cada ciclo precisam de largura fixa por algarismo,
-/// senao o valor dança horizontalmente e o painel parece instavel justo
-/// quando deveria parecer confiavel.
 const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
 
 abstract final class Fontes {
+  /// Números que mudam a cada ciclo precisam de largura fixa por algarismo,
+  /// senão o valor dança e o painel parece instável.
   static TextStyle valor(double tamanho, Color cor) => GoogleFonts.inter(
         fontSize: tamanho,
         height: 1,
         color: cor,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -tamanho * 0.03,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -tamanho * 0.025,
         fontFeatures: _tabular,
       );
 
-  static TextStyle rotulo(Color cor) => GoogleFonts.inter(
+  /// Única caixa alta do aplicativo: título de seção.
+  static TextStyle secao() => GoogleFonts.inter(
         fontSize: 11,
-        color: cor,
+        color: Cores.textoTerciario,
         fontWeight: FontWeight.w600,
-        letterSpacing: 1.2,
+        letterSpacing: 0.8,
       );
 
-  static TextStyle titulo(Color cor, {double tamanho = 16}) => GoogleFonts.inter(
+  static TextStyle titulo(Color cor, {double tamanho = 15}) =>
+      GoogleFonts.inter(
         fontSize: tamanho,
         color: cor,
         fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
+        letterSpacing: -0.1,
       );
 
   static TextStyle corpo(Color cor, {double tamanho = 13}) => GoogleFonts.inter(
         fontSize: tamanho,
         color: cor,
-        height: 1.4,
+        height: 1.35,
         fontFeatures: _tabular,
       );
 }
@@ -102,8 +122,7 @@ ThemeData construirTema() {
   );
 }
 
-/// Cartao padrao do painel. Existe para que o raio, a borda e o respiro sejam
-/// os mesmos em toda a tela sem ninguem precisar lembrar dos numeros.
+/// Contêiner padrão. Um raio, uma borda, em toda a tela.
 class Cartao extends StatelessWidget {
   const Cartao({required this.child, this.preenchimento, super.key});
 
@@ -115,18 +134,66 @@ class Cartao extends StatelessWidget {
         padding: preenchimento ?? const EdgeInsets.all(Espaco.m),
         decoration: BoxDecoration(
           color: Cores.superficie,
-          borderRadius: BorderRadius.circular(Espaco.m),
+          borderRadius: BorderRadius.circular(Raio.card),
           border: Border.all(color: Cores.borda),
         ),
         child: child,
       );
 }
 
-/// Barra de nivel com transicao suave. Valor que pula seco parece defeito,
-/// valor que desliza parece telemetria.
+/// Estado como ponto e texto, no lugar de cápsula tingida.
+///
+/// O ponto carrega a cor, o texto carrega o significado, e quem não distingue
+/// cor continua lendo.
+class PontoEstado extends StatelessWidget {
+  const PontoEstado(this.faixa, {this.texto, super.key});
+
+  final Faixa faixa;
+  final String? texto;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration:
+                BoxDecoration(color: Cores.da(faixa), shape: BoxShape.circle),
+          ),
+          const SizedBox(width: Espaco.p),
+          Text(texto ?? rotulos[faixa]!,
+              style: Fontes.corpo(Cores.textoSecundario)),
+        ],
+      );
+}
+
+/// Par rótulo e valor, alinhado em coluna. É o que faz a leitura parecer
+/// instrumento em vez de cartaz.
+class ParDado extends StatelessWidget {
+  const ParDado(this.rotulo, this.valor, {this.cor, super.key});
+
+  final String rotulo;
+  final String valor;
+  final Color? cor;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(rotulo, style: Fontes.corpo(Cores.textoTerciario, tamanho: 12)),
+          const SizedBox(width: Espaco.m),
+          Text(valor,
+              style: Fontes.corpo(cor ?? Cores.texto, tamanho: 12)
+                  .copyWith(fontWeight: FontWeight.w500)),
+        ],
+      );
+}
+
+/// Barra de nível. Fina, sem brilho e sem raio grande.
 class BarraNivel extends StatelessWidget {
   const BarraNivel(
-      {required this.fracao, required this.cor, this.altura = 6, super.key});
+      {required this.fracao, required this.cor, this.altura = 4, super.key});
 
   final double fracao;
   final Color cor;
@@ -134,7 +201,7 @@ class BarraNivel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ClipRRect(
-        borderRadius: BorderRadius.circular(altura),
+        borderRadius: BorderRadius.circular(altura / 2),
         child: Stack(children: [
           Container(height: altura, color: Cores.borda),
           LayoutBuilder(
@@ -143,45 +210,18 @@ class BarraNivel extends StatelessWidget {
               curve: Curves.easeOut,
               height: altura,
               width: limites.maxWidth * fracao.clamp(0, 1),
-              decoration: BoxDecoration(
-                color: cor,
-                borderRadius: BorderRadius.circular(altura),
-              ),
+              color: cor,
             ),
           ),
         ]),
       );
 }
 
-/// Etiqueta de estado. Fundo levemente tingido da cor do estado, para a faixa
-/// de alerta ser um objeto na tela e nao um texto perdido ao lado do numero.
-class Etiqueta extends StatelessWidget {
-  const Etiqueta(this.texto, this.cor, {this.solida = false, super.key});
-
-  final String texto;
-  final Color cor;
-  final bool solida;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: Espaco.p, vertical: Espaco.xs),
-        decoration: BoxDecoration(
-          color: solida ? cor : cor.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: cor.withValues(alpha: solida ? 1 : 0.35)),
-        ),
-        child: Text(texto,
-            style: Fontes.rotulo(solida ? Cores.fundo : cor)
-                .copyWith(fontSize: 10)),
-      );
-}
-
-/// Interruptor proprio, no lugar do Switch do Material.
+/// Interruptor próprio, no lugar do Switch do Material.
 ///
-/// E o unico elemento que a banca vai tocar, entao ele diz em palavras em que
-/// estado esta, e quando o bloqueio trava a operacao mostra cadeado em vez de
-/// ficar apenas cinza, que e como um Switch desabilitado se parece com um
+/// É o único elemento que a banca vai tocar, então ele diz em palavras em que
+/// estado está, e quando o bloqueio trava a operação mostra cadeado em vez de
+/// ficar apenas cinza, que é como um Switch desabilitado se parece com um
 /// Switch qualquer.
 class Interruptor extends StatelessWidget {
   const Interruptor({
@@ -200,32 +240,34 @@ class Interruptor extends StatelessWidget {
     if (travado) {
       return Container(
         padding: const EdgeInsets.symmetric(
-            horizontal: Espaco.m, vertical: Espaco.p),
+            horizontal: Espaco.p + 2, vertical: Espaco.xs + 2),
         decoration: BoxDecoration(
           color: Cores.fundo,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(Raio.interno),
           border: Border.all(color: Cores.borda),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.lock_outline, size: 13, color: Cores.textoFraco),
-          const SizedBox(width: Espaco.p),
-          Text('TRAVADO', style: Fontes.rotulo(Cores.textoFraco)),
+          const Icon(Icons.lock_outline, size: 12, color: Cores.textoTerciario),
+          const SizedBox(width: Espaco.p - 2),
+          Text('Travado', style: Fontes.corpo(Cores.textoTerciario, tamanho: 12)),
         ]),
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         color: Cores.fundo,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(Raio.interno),
         border: Border.all(color: Cores.borda),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        _Lado('DESLIGADO', ativo: !ligado, cor: Cores.textoFraco,
+        _Lado('Desligado',
+            ativo: !ligado,
+            cor: Cores.textoSecundario,
             aoTocar: () => aoAlternar(false)),
-        _Lado('LIGADO', ativo: ligado, cor: Cores.verde,
-            aoTocar: () => aoAlternar(true)),
+        _Lado('Ligado',
+            ativo: ligado, cor: Cores.verde, aoTocar: () => aoAlternar(true)),
       ]),
     );
   }
@@ -244,31 +286,80 @@ class _Lado extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
         onTap: ativo ? null : aoTocar,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
+          duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(
-              horizontal: Espaco.m, vertical: Espaco.p - 2),
+              horizontal: Espaco.p + 2, vertical: Espaco.xs),
           decoration: BoxDecoration(
-            color: ativo ? cor.withValues(alpha: 0.18) : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-                color: ativo ? cor.withValues(alpha: 0.5) : Colors.transparent),
+            color: ativo ? cor.withValues(alpha: 0.14) : Colors.transparent,
+            borderRadius: BorderRadius.circular(Raio.interno - 2),
           ),
           child: Text(texto,
-              style: Fontes.rotulo(ativo ? cor : Cores.textoFraco)
-                  .copyWith(fontSize: 10)),
+              style: Fontes.corpo(ativo ? cor : Cores.textoTerciario,
+                  tamanho: 12)),
         ),
       );
 }
 
-/// Número grande que percorre a distância até o valor novo, em vez de trocar.
+/// Seletor segmentado próprio.
 ///
-/// A primeira versão usava AnimatedSwitcher, mas com cross-fade os dois valores
-/// coexistem por 300ms e o número aparece fantasma a cada ciclo. Interpolar o
-/// próprio número resolve isso e ainda lê melhor: o valor sobe e desce como
-/// telemetria, em vez de pular de um estado para outro.
+/// O ChoiceChip do Material media o rótulo antes de a fonte carregar e cortava
+/// o texto ("Tud", "Operad"). Aqui a largura sai do próprio texto.
+class Segmentado extends StatelessWidget {
+  const Segmentado({
+    required this.opcoes,
+    required this.selecionado,
+    required this.aoSelecionar,
+    super.key,
+  });
+
+  final List<String> opcoes;
+  final int selecionado;
+  final ValueChanged<int> aoSelecionar;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: Cores.superficie,
+          borderRadius: BorderRadius.circular(Raio.interno),
+          border: Border.all(color: Cores.borda),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          for (final (indice, rotulo) in opcoes.indexed)
+            GestureDetector(
+              onTap: () => aoSelecionar(indice),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: Espaco.m, vertical: Espaco.p - 2),
+                decoration: BoxDecoration(
+                  color: indice == selecionado
+                      ? Cores.superficieAlta
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(Raio.interno - 2),
+                ),
+                child: Text(
+                  rotulo,
+                  style: Fontes.corpo(
+                      indice == selecionado
+                          ? Cores.texto
+                          : Cores.textoTerciario,
+                      tamanho: 12),
+                ),
+              ),
+            ),
+        ]),
+      );
+}
+
+/// Número que percorre a distância até o valor novo, em vez de trocar.
+///
+/// Com AnimatedSwitcher os dois valores coexistiam por 300ms e o número
+/// aparecia fantasma a cada ciclo. Interpolar o próprio valor resolve isso e
+/// ainda lê melhor como telemetria.
 class ValorAnimado extends StatelessWidget {
   const ValorAnimado(
-      {required this.valor, required this.cor, this.tamanho = 56, super.key});
+      {required this.valor, required this.cor, this.tamanho = 48, super.key});
 
   final double valor;
   final Color cor;
@@ -279,9 +370,7 @@ class ValorAnimado extends StatelessWidget {
         tween: Tween(begin: valor, end: valor),
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeOut,
-        builder: (_, atual, _) => Text(
-          '${atual.toStringAsFixed(1)}%',
-          style: Fontes.valor(tamanho, cor),
-        ),
+        builder: (_, atual, _) => Text('${atual.toStringAsFixed(1)}%',
+            style: Fontes.valor(tamanho, cor)),
       );
 }
