@@ -63,7 +63,7 @@ void main() {
         closeTo(80 + Limiares.recargaSolarPico, 0.001));
   });
 
-  test('T11 RN03: a captacao solar segue a curva do sol e nunca compensa a '
+  test('T11 RN12: a captacao solar segue a curva do sol e nunca compensa a '
       'irrigacao plena', () {
     expect(fatorSolar(3), 0, reason: 'madrugada');
     expect(fatorSolar(Limiares.amanhecer), 0);

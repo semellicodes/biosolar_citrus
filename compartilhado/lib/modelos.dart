@@ -57,7 +57,7 @@ class Limiares {
   /// RN03: consumo do reservatorio por bomba ligada, por ciclo.
   static const double consumoPorBombaPorTick = 0.8;
 
-  /// RN03: vazao maxima da captacao solar, no pico do dia.
+  /// RN12: vazao maxima da captacao solar, no pico do dia.
   ///
   /// Calibrado em um quinto do consumo com as quatro bombas ligadas, ou seja,
   /// a captacao nunca compensa a irrigacao plena e o reservatorio continua
@@ -78,7 +78,7 @@ class Limiares {
 /// Intensidade da geracao solar em uma hora do dia, de 0 a 1.
 ///
 /// Zero antes do amanhecer e depois do anoitecer, pico ao meio dia. E a mesma
-/// curva usada pela captacao de agua (RN03) e pelo balanco energetico (F08).
+/// curva usada pela captacao de agua (RN12) e pelo balanco energetico (F08).
 double fatorSolar(double hora) {
   if (hora <= Limiares.amanhecer || hora >= Limiares.anoitecer) return 0;
   return math.sin(math.pi *

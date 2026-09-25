@@ -23,7 +23,7 @@ class Decisao {
   bool get aceito => motivoRecusa == null;
 }
 
-/// RN01, RN02 e RN03: avanco fisico da simulacao.
+/// RN01, RN02, RN03 e RN12: avanco fisico da simulacao.
 ///
 /// A umidade cai nos talhoes sem aspersor e sobe nos irrigados. O reservatorio
 /// perde agua proporcionalmente ao numero de bombas ligadas e ganha agua pela
@@ -42,7 +42,7 @@ Telemetria atualizarSensores(Telemetria estado, DateTime agora) {
       ),
   ];
 
-  // RN03: consumo das bombas contra a captacao solar.
+  // RN03 e RN12: consumo das bombas contra a captacao solar.
   final horaSimulada =
       (estado.horaSimulada + Limiares.horasPorTick) % 24;
   final bombasLigadas = estado.bombas.where((b) => b.ligada).length;

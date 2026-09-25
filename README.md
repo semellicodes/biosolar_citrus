@@ -73,7 +73,7 @@ funcao leva no topo o codigo da regra que implementa.
 | --- | --- | --- | --- |
 | RN01 | Queda natural da umidade | 1,2 ponto por ciclo em talhao sem irrigacao | Caderno |
 | RN02 | Recuperacao por irrigacao | 3,0 pontos por ciclo com aspersor ligado | Caderno |
-| RN03 | Balanco hidrico do reservatorio | consumo de 0,8 por bomba por ciclo, contra a captacao solar, que segue a curva do sol e vale no maximo 0,64 | Caderno, estendida por decisao de projeto |
+| RN03 | Consumo do reservatorio | 0,8 por bomba ligada por ciclo | Caderno |
 | RN04 | Irrigacao critica automatica | umidade abaixo de 25% aciona o aspersor | Caderno |
 | RN05 | Encerramento da irrigacao automatica | umidade de volta a 45%, acima do gatilho para criar histerese | Caderno |
 | RN06 | Bloqueio de emergencia | reservatorio abaixo de 15% desliga todas as bombas | Caderno |
@@ -82,8 +82,9 @@ funcao leva no topo o codigo da regra que implementa.
 | RN09 | Liberacao do bloqueio | reservatorio de volta a 25% | Decisao de projeto |
 | RN10 | Faixas de alerta | verde, amarelo e vermelho, com rotulo escrito junto da cor | Caderno |
 | RN11 | Origem do evento | todo evento identifica se foi operador ou sistema | Decisao de projeto |
+| RN12 | Captacao solar | vazao que acompanha a curva do sol, nula a noite, no pico valendo um quinto do consumo com as quatro bombas ligadas | Decisao de projeto |
 
-### Por que existe captacao solar se o caderno nao pediu
+### RN12, por que existe captacao solar se o caderno nao pediu
 
 O caderno define o consumo do reservatorio, mas nao diz o que o reabastece. Sem
 reposicao, depois do primeiro bloqueio o nivel ficaria parado para sempre e a
@@ -209,7 +210,7 @@ do repositorio:
 | T08 | O comando manual e recusado no bloqueio e devolve o motivo | RN08 |
 | T09 | O bloqueio so e liberado no patamar de seguranca | RN09 |
 | T10 | Todo evento identifica corretamente a origem | RN11 |
-| T11 | A captacao solar segue a curva do sol e nunca compensa a irrigacao plena | RN03 |
+| T11 | A captacao solar segue a curva do sol e nunca compensa a irrigacao plena | RN12 |
 | T12 | A irrigacao manual acima do patamar alerta sem desligar, e alerta uma vez so | RN05 |
 
 O **T07 e o mais valioso da suite**, porque documenta a precedencia entre as duas
