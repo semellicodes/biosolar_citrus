@@ -25,6 +25,13 @@ const double _corteColunas = 700;
 /// o cabeçalho em duas linhas. Nada de lógica muda, só o que cabe na tela.
 const double _corteCelular = 480;
 
+/// Abaixo disto o cabeçalho vai para duas linhas. É um corte próprio, e maior
+/// que o de celular, porque quem manda aqui é a largura do nome do aplicativo:
+/// a Matcha Home é bem mais larga que a fonte de interface e, na mesma linha
+/// que o estado de conexão e os cinco botões, o nome era truncado bem antes
+/// dos 480.
+const double _corteCabecalho = 600;
+
 class TelaMonitoramento extends StatelessWidget {
   const TelaMonitoramento({super.key});
 
@@ -257,9 +264,13 @@ class _Topo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Único lugar do aplicativo com a Matcha Home. Ela é display, então pede
+    // corpo maior que o texto de interface para ler no mesmo peso.
     final titulo = Text(
       'BioSolar Citrus',
-      style: Fontes.titulo(Cores.texto, tamanho: celular ? 20 : 19),
+      style: Fontes.nomeDoAplicativo(celular ? 26 : 25),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
 
     final acoes = <Widget>[
@@ -297,33 +308,37 @@ class _Topo extends StatelessWidget {
       emTempoReal: emTempoReal,
     );
 
-    if (celular) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          titulo,
-          const SizedBox(height: Espaco.xs),
-          contexto,
-          const SizedBox(height: Espaco.p),
-          Row(children: [conexao, const Spacer(), ...acoes]),
-        ],
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, limites) {
+        if (limites.maxWidth < _corteCabecalho) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              titulo,
+              const SizedBox(height: Espaco.xs),
+              contexto,
+              const SizedBox(height: Espaco.p),
+              Row(children: [conexao, const Spacer(), ...acoes]),
+            ],
+          );
+        }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: titulo),
-            conexao,
-            const SizedBox(width: Espaco.p),
-            ...acoes,
+            Row(
+              children: [
+                Expanded(child: titulo),
+                conexao,
+                const SizedBox(width: Espaco.p),
+                ...acoes,
+              ],
+            ),
+            const SizedBox(height: Espaco.xs),
+            contexto,
           ],
-        ),
-        const SizedBox(height: Espaco.xs),
-        contexto,
-      ],
+        );
+      },
     );
   }
 }

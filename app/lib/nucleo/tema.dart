@@ -70,8 +70,17 @@ const Map<Faixa, String> rotulos = {
 const List<FontFeature> _tabular = [FontFeature.tabularFigures()];
 
 abstract final class Fontes {
-  /// Números que mudam a cada ciclo precisam de largura fixa por algarismo,
-  /// senão o valor dança e o painel parece instável.
+  /// Interface inteira, menos o nome do aplicativo e os valores numéricos.
+  static const String familia = 'CreatoDisplay';
+
+  /// Só o nome do aplicativo, no cabeçalho.
+  static const String marca = 'MatchaHome';
+
+  /// Valores que mudam a cada ciclo continuam em Inter.
+  ///
+  /// A Creato Display não tem dígitos de largura fixa nem o recurso de figuras
+  /// tabulares, e sem isso o número grande dança horizontalmente a cada
+  /// atualização, que é justamente o que faz um painel parecer instável.
   static TextStyle valor(double tamanho, Color cor) => GoogleFonts.inter(
         fontSize: tamanho,
         height: 1,
@@ -81,27 +90,36 @@ abstract final class Fontes {
         fontFeatures: _tabular,
       );
 
+  /// Nome do aplicativo. Único lugar em que a Matcha Home aparece.
+  static TextStyle nomeDoAplicativo(double tamanho) => TextStyle(
+        fontFamily: marca,
+        fontSize: tamanho,
+        color: Cores.texto,
+        height: 1.1,
+      );
+
   /// Única caixa alta do aplicativo: título de seção.
-  static TextStyle secao() => GoogleFonts.inter(
+  static TextStyle secao() => const TextStyle(
+        fontFamily: familia,
         fontSize: 13,
         color: Cores.textoTerciario,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
         letterSpacing: 0.8,
       );
 
-  static TextStyle titulo(Color cor, {double tamanho = 18}) =>
-      GoogleFonts.inter(
+  static TextStyle titulo(Color cor, {double tamanho = 18}) => TextStyle(
+        fontFamily: familia,
         fontSize: tamanho,
         color: cor,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
         letterSpacing: -0.1,
       );
 
-  static TextStyle corpo(Color cor, {double tamanho = 15}) => GoogleFonts.inter(
+  static TextStyle corpo(Color cor, {double tamanho = 15}) => TextStyle(
+        fontFamily: familia,
         fontSize: tamanho,
         color: cor,
         height: 1.35,
-        fontFeatures: _tabular,
       );
 }
 
@@ -114,7 +132,8 @@ ThemeData construirTema() {
       primary: Cores.verde,
       error: Cores.vermelho,
     ),
-    textTheme: GoogleFonts.interTextTheme(base.textTheme),
+    textTheme: base.textTheme.apply(fontFamily: Fontes.familia),
+    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: Fontes.familia),
     dividerColor: Cores.borda,
     appBarTheme: const AppBarTheme(
       backgroundColor: Cores.fundo,

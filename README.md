@@ -94,6 +94,22 @@ O painel se ajusta à largura disponível: os talhões ficam em duas colunas a
 partir de 700 pixels e em uma só abaixo disso, e acima de 1100 o conteúdo para
 de crescer e se centraliza, com o fundo cobrindo a janela inteira.
 
+### Tipografia
+
+Três famílias, cada uma com um trabalho:
+
+| Fonte | Onde | Por quê |
+| --- | --- | --- |
+| **Matcha Home** | só no nome do aplicativo | marca, aparece uma vez por tela |
+| **Creato Display** | todo o resto da interface | texto de leitura, quatro pesos |
+| **Inter** | só nos valores numéricos | **figuras tabulares** |
+
+A Inter fica porque a Creato Display não tem dígitos de largura fixa nem o
+recurso `tabularFigures`. Sem isso, o número grande muda de largura a cada
+atualização e dança horizontalmente na tela, que é exatamente o que faz um
+painel de telemetria parecer instável. Os arquivos das duas primeiras vivem em
+`app/assets/fontes`, junto das licenças, para o aplicativo não depender de rede.
+
 ### Por que fundo claro
 
 Este aplicativo é para o produtor usar no campo, no sol, de relance e com uma
