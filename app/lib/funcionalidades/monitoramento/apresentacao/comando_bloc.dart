@@ -25,6 +25,10 @@ class VelocidadeSolicitada extends EventoComando {
   final bool acelerada;
 }
 
+class PausaSolicitada extends EventoComando {
+  const PausaSolicitada();
+}
+
 class ReinicioSolicitado extends EventoComando {
   const ReinicioSolicitado();
 }
@@ -75,6 +79,14 @@ class ComandoBloc extends Bloc<EventoComando, EstadoComando> {
       emit(const ComandoEnviando());
       await _executar(emit, () async {
         await _emissor.definirVelocidade(acelerada: evento.acelerada);
+        return null;
+      });
+    });
+
+    on<PausaSolicitada>((_, emit) async {
+      emit(const ComandoEnviando());
+      await _executar(emit, () async {
+        await _emissor.pausarSimulacao();
         return null;
       });
     });

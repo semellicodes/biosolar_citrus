@@ -140,6 +140,8 @@ class _Painel extends StatelessWidget {
                                 aoNormalizar: () => comandos.add(
                                   const VelocidadeSolicitada(acelerada: false),
                                 ),
+                                aoPausar: () =>
+                                    comandos.add(const PausaSolicitada()),
                                 aoReiniciar: () =>
                                     comandos.add(const ReinicioSolicitado()),
                                 chovendo: telemetria.chovendo,
@@ -241,6 +243,7 @@ class _Topo extends StatelessWidget {
     required this.aoAbrirHistorico,
     required this.aoAcelerar,
     required this.aoNormalizar,
+    required this.aoPausar,
     required this.aoReiniciar,
     required this.chovendo,
     required this.aoAlternarChuva,
@@ -253,6 +256,7 @@ class _Topo extends StatelessWidget {
   final VoidCallback aoAbrirHistorico;
   final VoidCallback aoAcelerar;
   final VoidCallback aoNormalizar;
+  final VoidCallback aoPausar;
   final VoidCallback aoReiniciar;
   final bool chovendo;
   final VoidCallback aoAlternarChuva;
@@ -289,6 +293,7 @@ class _Topo extends StatelessWidget {
       _Acao(Icons.history, 'Histórico', aoAbrirHistorico),
       _Acao(Icons.fast_forward, 'Modo demonstração', aoAcelerar),
       _Acao(Icons.slow_motion_video, 'Velocidade normal', aoNormalizar),
+      _Acao(Icons.power_settings_new, 'Desligar sistema', aoPausar),
       _Acao(Icons.restart_alt, 'Reiniciar cenário', aoReiniciar),
     ];
 

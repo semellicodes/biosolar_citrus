@@ -61,6 +61,9 @@ class ApiFazenda implements LeitorTelemetria, LeitorEventos, EmissorComando {
       _postar('/simulacao/velocidade', {'acelerada': acelerada});
 
   @override
+  Future<void> pausarSimulacao() => _postar('/simulacao/pausar', const {});
+
+  @override
   Future<Telemetria> definirChuva({required bool chovendo}) async {
     final resposta = await _postar('/simulacao/chuva', {'chovendo': chovendo});
     if (resposta.statusCode != 200) {

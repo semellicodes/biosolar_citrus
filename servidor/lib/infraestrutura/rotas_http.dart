@@ -82,6 +82,12 @@ Handler criarRotas(ServicoSimulacao simulacao, RepositorioFazenda repositorio) {
     });
   });
 
+  // Pausa manual, sem encerrar o servidor ou os canais em tempo real.
+  rotas.post('/simulacao/pausar', (Request _) {
+    simulacao.pausar();
+    return _json({'ativa': simulacao.ativa});
+  });
+
   // RN13: chuva manual, comando do operador.
   rotas.post('/simulacao/chuva', (Request requisicao) async {
     final corpo =

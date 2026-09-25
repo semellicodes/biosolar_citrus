@@ -23,6 +23,7 @@ enum TipoEvento {
   chuvaEncerrada,
   simulacaoReiniciada,
   velocidadeAlterada,
+  simulacaoPausada,
 }
 
 /// Limiares que definem o comportamento da simulacao.

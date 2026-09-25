@@ -32,6 +32,7 @@ const _cinza = Cores.textoSecundario;
   TipoEvento.alertaDesperdicio => (cor: _amarelo, icone: Icons.warning_amber),
   TipoEvento.comandoAceito => (cor: _cinza, icone: Icons.touch_app),
   TipoEvento.velocidadeAlterada => (cor: _cinza, icone: Icons.fast_forward),
+  TipoEvento.simulacaoPausada => (cor: _cinza, icone: Icons.power_settings_new),
   TipoEvento.simulacaoReiniciada => (cor: _cinza, icone: Icons.restart_alt),
   TipoEvento.chuvaIniciada => (cor: _azul, icone: Icons.water),
   TipoEvento.chuvaEncerrada => (cor: _cinza, icone: Icons.water_outlined),

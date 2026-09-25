@@ -121,4 +121,15 @@ void main() {
           .having((e) => e.mensagem, 'mensagem', 'Bloqueio de emergencia ativo.')
     ],
   );
+
+  blocTest<ComandoBloc, EstadoComando>(
+    'pausa manual pede a interrupção do ciclo ao servidor',
+    build: () {
+      when(() => emissor.pausarSimulacao()).thenAnswer((_) async {});
+      return ComandoBloc(emissor);
+    },
+    act: (bloc) => bloc.add(const PausaSolicitada()),
+    expect: () => [isA<ComandoEnviando>(), isA<ComandoOcioso>()],
+    verify: (_) => verify(() => emissor.pausarSimulacao()).called(1),
+  );
 }

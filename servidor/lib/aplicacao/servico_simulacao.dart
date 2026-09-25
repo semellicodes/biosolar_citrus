@@ -40,6 +40,7 @@ class ServicoSimulacao {
   Telemetria get telemetria => _repositorio.telemetria;
   Duration get intervalo => _intervalo;
   bool get acelerada => _intervalo == velocidadeAcelerada;
+  bool get ativa => _relogio != null;
 
   void iniciar() {
     _relogio?.cancel();
@@ -51,6 +52,22 @@ class ServicoSimulacao {
     _relogio = null;
     await _atualizacoes.close();
     await _novosEventos.close();
+  }
+
+  /// Pausa os ciclos sem encerrar os canais do servidor.
+  void pausar() {
+    if (_relogio == null) return;
+    _relogio?.cancel();
+    _relogio = null;
+    _registrar([
+      Evento(
+        hora: DateTime.now(),
+        tipo: TipoEvento.simulacaoPausada,
+        origem: Origem.operador,
+        descricao: 'Sistema pausado manualmente',
+        motivo: 'Ciclo interrompido pelo operador',
+      )
+    ]);
   }
 
   /// RF12 e F07.
