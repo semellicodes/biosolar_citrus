@@ -110,6 +110,21 @@ atualização e dança horizontalmente na tela, que é exatamente o que faz um
 painel de telemetria parecer instável. Os arquivos das duas primeiras vivem em
 `app/assets/fontes`, junto das licenças, para o aplicativo não depender de rede.
 
+### Fundo
+
+Uma foto de pomar de citros entra como textura, em `app/assets/imagens`. Ela é
+desenhada cobrindo a tela, fixa, fora da área rolável, e leva desfoque de sigma
+15 aplicado só na imagem, nunca no conteúdo, então o desfoque é calculado uma
+vez e não a cada quadro da rolagem. Por cima vai um véu da cor de fundo do tema
+com opacidade em `_opacidadeDoVeu`, hoje em 0,90.
+
+Os cartões continuam opacos, com a cor de superfície, então o contraste dos
+números não depende em nada do que está atrás deles. O valor do véu foi escolhido
+medindo o contraste no pior ponto de fundo atrás do texto terciário, que é o de
+menor contraste da tela: 4,40 sem imagem, 3,72 com véu de 0,90, 3,07 com 0,82 e
+2,70 com 0,74. A partir de 0,82 a linha de contexto e o rótulo TALHÕES começam a
+se perder nas partes escuras da foto.
+
 ### Por que fundo claro
 
 Este aplicativo é para o produtor usar no campo, no sol, de relance e com uma

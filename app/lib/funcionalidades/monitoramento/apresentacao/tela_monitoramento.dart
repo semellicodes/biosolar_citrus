@@ -5,6 +5,8 @@
 /// servidor devolveu.
 library;
 
+import 'dart:ui' show ImageFilter;
+
 import 'package:compartilhado/modelos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,6 +33,28 @@ const double _corteCelular = 480;
 /// que o estado de conexão e os cinco botões, o nome era truncado bem antes
 /// dos 480.
 const double _corteCabecalho = 600;
+
+/// Opacidade do véu sobre a foto do pomar. É o número para mexer quando quiser
+/// mais ou menos textura no fundo.
+///
+/// Medido com a foto atual, no pior ponto de fundo atrás do texto terciário,
+/// que é o de menor contraste da tela e portanto o primeiro a sofrer:
+///
+/// | véu  | contraste do texto terciário |
+/// |------|------------------------------|
+/// | sem imagem | 4,40                   |
+/// | 0,90 | 3,72, 15% abaixo da base      |
+/// | 0,82 | 3,07, 30% abaixo             |
+/// | 0,74 | 2,70, 39% abaixo             |
+///
+/// 0,90 mantém a leitura praticamente igual à de fundo liso. Abaixo de 0,82 a
+/// linha de contexto e o rótulo TALHÕES começam a se perder nas partes escuras
+/// da foto. O título nunca é problema: fica acima de 9 em qualquer um deles.
+const double _opacidadeDoVeu = 0.90;
+
+/// Desfoque da foto de fundo. Alto de propósito: o que interessa dela é a
+/// mancha de cor, não o pomar reconhecível.
+const double _desfoqueDoFundo = 15;
 
 class TelaMonitoramento extends StatelessWidget {
   const TelaMonitoramento({super.key});
@@ -95,6 +119,9 @@ class _Painel extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
+          // Foto do pomar como textura de fundo, fixa: ela fica fora da área
+          // rolável, então não acompanha a rolagem nem é redesenhada por ela.
+          const _FundoDoPomar(),
           // Temperatura ambiente da tela inteira, não brilho atrás de um card.
           // Invisível em operação normal, discreta em atenção, presente em
           // crítico.
@@ -237,6 +264,43 @@ String _hora(DateTime d) =>
     '${d.hour.toString().padLeft(2, '0')}:'
     '${d.minute.toString().padLeft(2, '0')}:'
     '${d.second.toString().padLeft(2, '0')}';
+
+/// Foto do pomar desfocada, com véu da cor de fundo por cima.
+///
+/// O desfoque envolve só a imagem, nunca o conteúdo: assim ele é calculado uma
+/// vez, quando a imagem é desenhada, e não a cada quadro da rolagem. Os cartões
+/// continuam opacos, com a cor de superfície, então o contraste dos números não
+/// depende em nada do que está atrás.
+class _FundoDoPomar extends StatelessWidget {
+  const _FundoDoPomar();
+
+  @override
+  Widget build(BuildContext context) => Positioned.fill(
+        child: IgnorePointer(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ImageFiltered(
+                imageFilter: ImageFilter.blur(
+                  sigmaX: _desfoqueDoFundo,
+                  sigmaY: _desfoqueDoFundo,
+                  // Sem isto o desfoque puxa transparência das bordas e a
+                  // moldura da tela clareia.
+                  tileMode: TileMode.clamp,
+                ),
+                child: Image.asset(
+                  'assets/imagens/pomar.jpg',
+                  fit: BoxFit.cover,
+                ),
+              ),
+              ColoredBox(
+                color: Cores.fundo.withValues(alpha: _opacidadeDoVeu),
+              ),
+            ],
+          ),
+        ),
+      );
+}
 
 class _Ambiente extends StatelessWidget {
   const _Ambiente({required this.cor, required this.opacidade});

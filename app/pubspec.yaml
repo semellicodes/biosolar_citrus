@@ -67,6 +67,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  assets:
+    - assets/imagens/
+
   fonts:
     # So no nome do aplicativo, no cabecalho.
     - family: MatchaHome
