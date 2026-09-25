@@ -238,7 +238,9 @@ void main() {
     expect(decisao.eventos.single.tipo, TipoEvento.bloqueioLiberado);
   });
 
-  test('T13 RN13: durante a chuva o solo sobe sem bomba, e a irrigacao '
+  // T13 esta reservado para o teste do equilibrio hidrico, que vem do branch
+  // campo e e anterior a este na ordem logica das regras.
+  test('T14 RN13: durante a chuva o solo sobe sem bomba, e a irrigacao '
       'critica continua valendo', () {
     // A chuva nao desliga nada: ela muda o que a fisica faz com o solo, e as
     // regras de decisao continuam sendo avaliadas do mesmo jeito.

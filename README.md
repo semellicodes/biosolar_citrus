@@ -253,7 +253,7 @@ do repositório:
 | T10 | Todo evento identifica corretamente a origem | RN11 |
 | T11 | A captação solar segue a curva do sol e nunca compensa a irrigação plena | RN12 |
 | T12 | A irrigação manual acima do patamar alerta sem desligar, e alerta uma vez só | RN05 |
-| T13 | Durante a chuva o solo sobe sem bomba, e a irrigação crítica continua valendo | RN13 |
+| T14 | Durante a chuva o solo sobe sem bomba, e a irrigação crítica continua valendo | RN13 |
 
 O **T07 é o mais valioso da suíte**, porque documenta a precedência entre as duas
 regras críticas do desafio, que é o ponto onde a maioria das implementações
