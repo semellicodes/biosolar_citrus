@@ -54,9 +54,9 @@ pelo canal em tempo real ou pela consulta de reserva:
 ![Painel em operação normal](docs/painel-normal.png)
 
 Bloqueio de emergência ativo. A tela inteira muda de temperatura com o estado do
-reservatório, os interruptores ficam travados e o botão "Tentar mesmo assim"
-existe para provar, na frente da banca, que a recusa vem do servidor e não da
-interface:
+reservatório, os botões ficam travados com cadeado e o "Tentar ligar mesmo
+assim" existe para provar, na frente da banca, que a recusa vem do servidor e
+não da interface:
 
 ![Painel com bloqueio de emergência](docs/painel-bloqueio.png)
 
@@ -66,11 +66,23 @@ operador:
 
 ![Histórico de decisões](docs/historico.png)
 
-O painel se ajusta à largura disponível. Os talhões são uma lista única com
-divisórias, e cada linha muda de arranjo conforme o espaço: em tela larga ficam
-três blocos lado a lado, identificação, medida e controle; em coluna estreita
-eles empilham. Acima de 1100 pixels o conteúdo para de crescer e se centraliza,
-com o fundo cobrindo a janela inteira.
+No celular, que é onde o aplicativo de fato vai ser usado:
+
+![Painel no celular](docs/painel-celular.png)
+
+O painel se ajusta à largura disponível: os talhões ficam em duas colunas a
+partir de 700 pixels e em uma só abaixo disso, e acima de 1100 o conteúdo para
+de crescer e se centraliza, com o fundo cobrindo a janela inteira.
+
+### Por que fundo claro
+
+Este aplicativo é para o produtor usar no campo, no sol, de relance e com uma
+mão. Isso manda fundo claro, contraste alto, texto grande, alvo de toque grande
+e pouca informação por tela. Tema escuro de sala de controle é bonito no
+monitor e ilegível debaixo do sol, então as cores de estado são escuras o
+bastante para sobreviver à luz direta, o número de cada talhão tem 52 pixels e
+o botão de acionamento ocupa a largura do cartão com 56 pixels de altura, bem
+acima dos 48 recomendados para toque.
 
 ## Regras de negócio
 

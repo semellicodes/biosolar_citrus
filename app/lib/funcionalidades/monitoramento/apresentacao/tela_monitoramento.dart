@@ -18,9 +18,6 @@ import 'telemetria_bloc.dart';
 /// cobrindo a janela inteira.
 const double _larguraMaxima = 1100;
 
-/// Abaixo disto a linha do talhão empilha em vez de usar três blocos.
-const double _corteLinha = 620;
-
 /// Abaixo disto o cartão do reservatório deixa de ser duas colunas.
 const double _corteColunas = 700;
 
@@ -339,54 +336,44 @@ class _FaixaBloqueio extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         margin: const EdgeInsets.only(bottom: Espaco.m),
-        padding: const EdgeInsets.symmetric(
-            horizontal: Espaco.m, vertical: Espaco.p + 2),
-        decoration: const BoxDecoration(
-          color: Cores.superficieAlta,
-          border:
-              Border(left: BorderSide(color: Cores.vermelho, width: 2)),
+        padding: const EdgeInsets.all(Espaco.m),
+        decoration: BoxDecoration(
+          color: Cores.vermelho.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(Raio.card),
+          border: Border.all(color: Cores.vermelho, width: 2),
         ),
-        child: Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          alignment: WrapAlignment.spaceBetween,
-          runSpacing: Espaco.p,
-          children: [
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                    color: Cores.vermelho, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: Espaco.p),
-              Text('Bloqueio de emergência',
-                  style: Fontes.titulo(Cores.texto, tamanho: 14)),
-              const SizedBox(width: Espaco.p),
-              Flexible(
-                child: Text(
-                    'reservatório crítico, nenhuma bomba pode ser acionada.',
-                    style: Fontes.corpo(Cores.textoSecundario)),
-              ),
-            ]),
-            // Passo 7 do roteiro: com os interruptores travados não dá para
-            // provar que a recusa vem do servidor. Este botão passa por cima
-            // da trava da interface e o 409 chega do domínio.
-            TextButton(
-              onPressed: aoTentar,
-              style: TextButton.styleFrom(
-                foregroundColor: Cores.vermelho,
-                padding: const EdgeInsets.symmetric(horizontal: Espaco.m),
-                minimumSize: const Size(0, 32),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(Raio.interno),
-                  side: const BorderSide(color: Cores.vermelho),
-                ),
-              ),
-              child: Text('Tentar mesmo assim',
-                  style: Fontes.corpo(Cores.vermelho)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.block, size: 22, color: Cores.vermelho),
+            const SizedBox(width: Espaco.p),
+            Expanded(
+              child: Text('Bloqueio de emergência',
+                  style: Fontes.titulo(Cores.vermelho, tamanho: 20)),
             ),
-          ],
-        ),
+          ]),
+          const SizedBox(height: Espaco.p),
+          Text('Reservatório crítico. Nenhuma bomba pode ser acionada.',
+              style: Fontes.corpo(Cores.texto, tamanho: 16)),
+          const SizedBox(height: Espaco.m),
+          // Passo 7 do roteiro: com os botões travados não dá para provar que
+          // a recusa vem do servidor. Este passa por cima da trava da interface
+          // e o 409 chega do domínio.
+          SizedBox(
+            height: Interruptor.altura,
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: aoTentar,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Cores.vermelho,
+                side: const BorderSide(color: Cores.vermelho, width: 2),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Raio.interno)),
+              ),
+              child: Text('Tentar ligar mesmo assim',
+                  style: Fontes.titulo(Cores.vermelho, tamanho: 17)),
+            ),
+          ),
+        ]),
       );
 }
 
@@ -407,56 +394,48 @@ class _CartaoReservatorio extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text('RESERVATÓRIO', style: Fontes.secao()),
-        const SizedBox(height: Espaco.m),
-        Row(children: [
-          ValorAnimado(valor: reservatorio.nivel, cor: cor, tamanho: 50),
-          const SizedBox(width: Espaco.m),
-          PontoEstado(reservatorio.faixa),
-        ]),
-        const SizedBox(height: Espaco.m),
-        BarraNivel(fracao: reservatorio.nivel / 100, cor: cor),
-        const SizedBox(height: Espaco.g),
-        ParDado('Capacidade',
-            '${(reservatorio.capacidadeLitros / 1000).toStringAsFixed(0)} mil litros'),
         const SizedBox(height: Espaco.p),
-        const ParDado('Pico previsto', '12h'),
+        // Uma linha, um número: é o que o produtor quer saber de relance.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: ValorAnimado(valor: reservatorio.nivel, cor: cor, tamanho: 72),
+        ),
         const SizedBox(height: Espaco.p),
-        ParDado('Última leitura', _hora(telemetria.hora)),
+        PontoEstado(reservatorio.faixa),
+        const SizedBox(height: Espaco.m),
+        BarraNivel(fracao: reservatorio.nivel / 100, cor: cor, altura: 14),
       ],
     );
 
     Widget captacaoCom(double alturaGrafico) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(children: [
-          Expanded(child: Text('CAPTAÇÃO SOLAR', style: Fontes.secao())),
-          Text(
-            noite
-                ? 'parada (noite)'
-                : '${(fator * 100).round()}%  ·  '
-                    '${telemetria.horaSimulada.floor().toString().padLeft(2, '0')}h',
-            style: Fontes.corpo(
-                noite ? Cores.textoSecundario : Cores.ambar,
-                tamanho: 12),
-          ),
-        ]),
-        const SizedBox(height: Espaco.m),
-        _BarrasSolares(telemetria: telemetria, altura: alturaGrafico),
-      ],
-    );
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(children: [
+              Expanded(child: Text('CAPTAÇÃO SOLAR', style: Fontes.secao())),
+              Text(
+                noite ? 'parada, é noite' : '${(fator * 100).round()}%',
+                style: Fontes.titulo(
+                    noite ? Cores.textoSecundario : Cores.ambar,
+                    tamanho: 16),
+              ),
+            ]),
+            const SizedBox(height: Espaco.m),
+            _BarrasSolares(telemetria: telemetria, altura: alturaGrafico),
+          ],
+        );
 
     return Cartao(
       preenchimento: const EdgeInsets.all(Espaco.g),
       child: LayoutBuilder(builder: (context, limites) {
-        // Abaixo do corte as duas colunas empilham, com o gráfico embaixo.
         if (limites.maxWidth < _corteColunas) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               nivel,
               const SizedBox(height: Espaco.g),
-              captacaoCom(56),
+              captacaoCom(64),
             ],
           );
         }
@@ -465,9 +444,7 @@ class _CartaoReservatorio extends StatelessWidget {
           children: [
             Expanded(child: nivel),
             const SizedBox(width: Espaco.xg),
-            // Mais alto em duas colunas, para o gráfico equilibrar a coluna
-            // da esquerda em vez de ficar uma tira no topo.
-            Expanded(child: captacaoCom(122)),
+            Expanded(child: captacaoCom(130)),
           ],
         );
       }),
@@ -562,26 +539,30 @@ class _ListaTalhoes extends StatelessWidget {
   final void Function(Bomba, bool) aoAlternar;
 
   @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          color: Cores.superficie,
-          borderRadius: BorderRadius.circular(Raio.card),
-          border: Border.all(color: Cores.borda),
-        ),
-        // Um contêiner com divisórias de um pixel, em vez de quatro cartões
-        // com borda: a lista fica escaneável e recupera bastante tela.
-        child: Column(children: [
-          for (final (indice, talhao) in telemetria.talhoes.indexed) ...[
-            if (indice > 0) const Divider(height: 1, color: Cores.borda),
-            _LinhaTalhao(
-              talhao: talhao,
-              bomba: telemetria.bombaDo(talhao.id),
-              travado: travado,
-              aoAlternar: aoAlternar,
-            ),
+  Widget build(BuildContext context) => LayoutBuilder(builder: (_, limites) {
+        // Cartao alto e largo, um por talhao. Lista densa lê bem sentado na
+        // frente do monitor e mal de pé no pomar com o sol na tela.
+        final colunas = limites.maxWidth >= _corteColunas ? 2 : 1;
+        final largura =
+            (limites.maxWidth - Espaco.m * (colunas - 1)) / colunas;
+
+        return Wrap(
+          spacing: Espaco.m,
+          runSpacing: Espaco.m,
+          children: [
+            for (final talhao in telemetria.talhoes)
+              SizedBox(
+                width: largura,
+                child: _LinhaTalhao(
+                  talhao: talhao,
+                  bomba: telemetria.bombaDo(talhao.id),
+                  travado: travado,
+                  aoAlternar: aoAlternar,
+                ),
+              ),
           ],
-        ]),
-      );
+        );
+      });
 }
 
 class _LinhaTalhao extends StatelessWidget {
@@ -599,90 +580,69 @@ class _LinhaTalhao extends StatelessWidget {
 
   /// Diz o tempo todo de quem partiu o que está acontecendo, que é a tese
   /// central do projeto: a autonomia mora no servidor.
-  String get _situacao => switch ((bomba.ligada, bomba.origemUltimoAcionamento)) {
+  String get _situacao =>
+      switch ((bomba.ligada, bomba.origemUltimoAcionamento)) {
         (false, _) => 'Aguardando',
-        (true, Origem.operador) => 'Acionado pelo operador',
-        (true, _) => 'Irrigação automática em curso',
+        (true, Origem.operador) => 'Você ligou esta bomba',
+        (true, _) => 'O sistema ligou sozinho',
       };
 
   @override
   Widget build(BuildContext context) {
     final cor = Cores.da(talhao.faixa);
+    final critico = talhao.faixa == Faixa.vermelho;
 
-    final identificacao = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text('${talhao.nome}  ·  ${talhao.cultura}',
-            style: Fontes.corpo(Cores.texto, tamanho: 14),
+    return Container(
+      padding: const EdgeInsets.all(Espaco.g),
+      decoration: BoxDecoration(
+        color: Cores.superficie,
+        borderRadius: BorderRadius.circular(Raio.card),
+        // Crítico ganha peso: borda na cor do estado, mais grossa.
+        border: Border.all(
+            color: critico ? cor : Cores.borda, width: critico ? 2 : 1),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(talhao.nome,
+            style: Fontes.titulo(Cores.texto, tamanho: 22),
             maxLines: 1,
             overflow: TextOverflow.ellipsis),
         const SizedBox(height: 2),
-        Text(_situacao,
-            style: Fontes.corpo(Cores.textoTerciario, tamanho: 12),
+        Text(talhao.cultura,
+            style: Fontes.corpo(Cores.textoTerciario, tamanho: 14),
             maxLines: 1,
             overflow: TextOverflow.ellipsis),
-      ],
-    );
-
-    final medida = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ValorAnimado(valor: talhao.umidade, cor: cor, tamanho: 26),
-        const SizedBox(height: Espaco.p),
-        BarraNivel(fracao: talhao.umidade / 100, cor: cor),
-      ],
-    );
-
-    final controle = Interruptor(
-      ligado: bomba.ligada,
-      travado: travado,
-      aoAlternar: (ligar) => aoAlternar(bomba, ligar),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: Espaco.m, vertical: Espaco.m),
-      child: LayoutBuilder(builder: (context, limites) {
-        if (limites.maxWidth < _corteLinha) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                Expanded(child: identificacao),
-                const SizedBox(width: Espaco.m),
-                PontoEstado(talhao.faixa),
-              ]),
-              const SizedBox(height: Espaco.m),
-              Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Expanded(child: medida),
-                const SizedBox(width: Espaco.m),
-                controle,
-              ]),
-            ],
-          );
-        }
-
-        return Row(children: [
-          Expanded(flex: 4, child: identificacao),
-          const SizedBox(width: Espaco.g),
-          SizedBox(width: 150, child: medida),
-          const SizedBox(width: Espaco.g),
-          SizedBox(
-            width: 170,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                PontoEstado(talhao.faixa),
-                const SizedBox(height: Espaco.p),
-                controle,
-              ],
+        const SizedBox(height: Espaco.m),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child:
+                    ValorAnimado(valor: talhao.umidade, cor: cor, tamanho: 52),
+              ),
             ),
-          ),
-        ]);
-      }),
+            const SizedBox(width: Espaco.m),
+            PontoEstado(talhao.faixa),
+          ],
+        ),
+        const SizedBox(height: Espaco.m),
+        BarraNivel(fracao: talhao.umidade / 100, cor: cor, altura: 12),
+        const SizedBox(height: Espaco.m),
+        Text(_situacao,
+            style: Fontes.corpo(
+                bomba.ligada ? Cores.verde : Cores.textoTerciario,
+                tamanho: 15),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
+        const SizedBox(height: Espaco.m),
+        Interruptor(
+          ligado: bomba.ligada,
+          travado: travado,
+          aoAlternar: (ligar) => aoAlternar(bomba, ligar),
+        ),
+      ]),
     );
   }
 }
