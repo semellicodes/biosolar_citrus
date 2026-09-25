@@ -37,6 +37,7 @@ dependencies:
   compartilhado:
     path: ../compartilhado
   http: ^1.6.0
+  get_it: ^9.3.0
 
 dev_dependencies:
   flutter_test:
