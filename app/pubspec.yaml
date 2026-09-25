@@ -71,6 +71,11 @@ flutter:
     - assets/imagens/
 
   fonts:
+    # Marca do aplicativo, no cabeçalho.
+    - family: Coolvetica
+      fonts:
+        - asset: assets/fontes/Coolvetica-Rg.otf
+
     # So no nome do aplicativo, no cabecalho.
     - family: MatchaHome
       fonts:

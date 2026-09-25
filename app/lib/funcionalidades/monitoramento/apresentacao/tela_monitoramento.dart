@@ -5,8 +5,6 @@
 /// servidor devolveu.
 library;
 
-import 'dart:ui' show ImageFilter;
-
 import 'package:compartilhado/modelos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -34,27 +32,7 @@ const double _corteCelular = 480;
 /// dos 480.
 const double _corteCabecalho = 600;
 
-/// Opacidade do véu sobre a foto do pomar. É o número para mexer quando quiser
-/// mais ou menos textura no fundo.
-///
-/// Medido com a foto atual, no pior ponto de fundo atrás do texto terciário,
-/// que é o de menor contraste da tela e portanto o primeiro a sofrer:
-///
-/// | véu  | contraste do texto terciário |
-/// |------|------------------------------|
-/// | sem imagem | 4,40                   |
-/// | 0,90 | 3,72, 15% abaixo da base      |
-/// | 0,82 | 3,07, 30% abaixo             |
-/// | 0,74 | 2,70, 39% abaixo             |
-///
-/// 0,90 mantém a leitura praticamente igual à de fundo liso. Abaixo de 0,82 a
-/// linha de contexto e o rótulo TALHÕES começam a se perder nas partes escuras
-/// da foto. O título nunca é problema: fica acima de 9 em qualquer um deles.
-const double _opacidadeDoVeu = 0.90;
-
-/// Desfoque da foto de fundo. Alto de propósito: o que interessa dela é a
-/// mancha de cor, não o pomar reconhecível.
-const double _desfoqueDoFundo = 15;
+const double _opacidadeDoVeu = 0.42;
 
 class TelaMonitoramento extends StatelessWidget {
   const TelaMonitoramento({super.key});
@@ -113,19 +91,12 @@ class _Painel extends StatelessWidget {
   Widget build(BuildContext context) {
     final comandos = context.read<ComandoBloc>();
     final telemetria = this.telemetria;
-    final faixa = telemetria?.reservatorio.faixa ?? Faixa.verde;
     final bloqueado = telemetria?.reservatorio.bloqueioAtivo ?? false;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Foto do pomar como textura de fundo, fixa: ela fica fora da área
-          // rolável, então não acompanha a rolagem nem é redesenhada por ela.
           const _FundoDoPomar(),
-          // Temperatura ambiente da tela inteira, não brilho atrás de um card.
-          // Invisível em operação normal, discreta em atenção, presente em
-          // crítico.
-          _Ambiente(cor: Cores.da(faixa), opacidade: Cores.brilhoDa(faixa)),
           SafeArea(
             child: telemetria == null
                 ? Center(
@@ -147,107 +118,80 @@ class _Painel extends StatelessWidget {
                           constraints: const BoxConstraints(
                             maxWidth: _larguraMaxima,
                           ),
-                          // Máscara de desvanecimento no topo da área rolável: o conteúdo
-                          // some por baixo da borda em vez de cortar em linha reta.
-                          // BlendMode.dstIn usa só o alfa do degradê, então isto não é
-                          // desfoque e não custa nada durante a rolagem.
-                          //
-                          // O degradê tem a altura do respiro superior da lista, então com a
-                          // lista no topo ele cai sobre espaço vazio e não esconde nada.
-                          child: ShaderMask(
-                            blendMode: BlendMode.dstIn,
-                            shaderCallback: (area) => LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Cores.fundo.withValues(alpha: 0),
-                                Cores.fundo,
-                              ],
-                              stops: [
-                                0,
-                                (Espaco.g / area.height).clamp(0.0, 1.0),
-                              ],
-                            ).createShader(area),
-                            child: ListView(
-                              padding: EdgeInsets.fromLTRB(
-                                celular ? Espaco.m : Espaco.g,
-                                Espaco.g,
-                                celular ? Espaco.m : Espaco.g,
-                                Espaco.xg,
-                              ),
-                              children: [
-                                _Topo(
-                                  celular: celular,
-                                  telemetria: telemetria,
-                                  desconectado: desconectado,
-                                  emTempoReal: emTempoReal,
-                                  aoAbrirHistorico: () => Navigator.of(
-                                    context,
-                                  ).pushNamed(TelaEventos.rota),
-                                  aoAcelerar: () => comandos.add(
-                                    const VelocidadeSolicitada(acelerada: true),
-                                  ),
-                                  aoNormalizar: () => comandos.add(
-                                    const VelocidadeSolicitada(
-                                      acelerada: false,
-                                    ),
-                                  ),
-                                  aoReiniciar: () =>
-                                      comandos.add(const ReinicioSolicitado()),
-                                  chovendo: telemetria.chovendo,
-                                  aoAlternarChuva: () => comandos.add(
-                                    ChuvaSolicitada(
-                                      chovendo: !telemetria.chovendo,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: Espaco.g),
-
-                                // Sem contato, o bloqueio que a tela mostra é
-                                // informação velha: o aviso de defasagem vence e o de
-                                // bloqueio sai.
-                                if (desconectado)
-                                  _FaixaDefasagem(
-                                    'Defasado desde ${_hora(telemetria.hora)}. '
-                                    'Reconectando.',
-                                  )
-                                else if (bloqueado)
-                                  _FaixaBloqueio(
-                                    aoTentar: () => comandos.add(
-                                      AcionamentoSolicitado(
-                                        telemetria.bombas.first.id,
-                                        ligar: true,
-                                      ),
-                                    ),
-                                  ),
-
-                                _CartaoReservatorio(
-                                  telemetria: telemetria,
-                                  celular: celular,
-                                ),
-                                SizedBox(height: celular ? Espaco.m : Espaco.g),
-                                Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: Espaco.xs,
-                                    bottom: Espaco.p,
-                                  ),
-                                  child: Text('TALHÕES', style: Fontes.secao()),
-                                ),
-                                _ListaTalhoes(
-                                  celular: celular,
-                                  telemetria: telemetria,
-                                  // RF11. O servidor recusa de qualquer jeito (RN08);
-                                  // travar aqui é conveniência, não segurança.
-                                  travado: bloqueado || desconectado,
-                                  aoAlternar: (bomba, ligar) => comandos.add(
-                                    AcionamentoSolicitado(
-                                      bomba.id,
-                                      ligar: ligar,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                          child: ListView(
+                            padding: EdgeInsets.fromLTRB(
+                              celular ? Espaco.m : Espaco.g,
+                              Espaco.g,
+                              celular ? Espaco.m : Espaco.g,
+                              Espaco.xg,
                             ),
+                            children: [
+                              _Topo(
+                                celular: celular,
+                                telemetria: telemetria,
+                                desconectado: desconectado,
+                                emTempoReal: emTempoReal,
+                                aoAbrirHistorico: () => Navigator.of(
+                                  context,
+                                ).pushNamed(TelaEventos.rota),
+                                aoAcelerar: () => comandos.add(
+                                  const VelocidadeSolicitada(acelerada: true),
+                                ),
+                                aoNormalizar: () => comandos.add(
+                                  const VelocidadeSolicitada(acelerada: false),
+                                ),
+                                aoReiniciar: () =>
+                                    comandos.add(const ReinicioSolicitado()),
+                                chovendo: telemetria.chovendo,
+                                aoAlternarChuva: () => comandos.add(
+                                  ChuvaSolicitada(
+                                    chovendo: !telemetria.chovendo,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: Espaco.g),
+
+                              // Sem contato, o bloqueio que a tela mostra é
+                              // informação velha: o aviso de defasagem vence e o de
+                              // bloqueio sai.
+                              if (desconectado)
+                                _FaixaDefasagem(
+                                  'Defasado desde ${_hora(telemetria.hora)}. '
+                                  'Reconectando.',
+                                )
+                              else if (bloqueado)
+                                _FaixaBloqueio(
+                                  aoTentar: () => comandos.add(
+                                    AcionamentoSolicitado(
+                                      telemetria.bombas.first.id,
+                                      ligar: true,
+                                    ),
+                                  ),
+                                ),
+
+                              _CartaoReservatorio(
+                                telemetria: telemetria,
+                                celular: celular,
+                              ),
+                              SizedBox(height: celular ? Espaco.m : Espaco.g),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: Espaco.xs,
+                                  bottom: Espaco.p,
+                                ),
+                                child: Text('TALHÕES', style: Fontes.secao()),
+                              ),
+                              _ListaTalhoes(
+                                celular: celular,
+                                telemetria: telemetria,
+                                // RF11. O servidor recusa de qualquer jeito (RN08);
+                                // travar aqui é conveniência, não segurança.
+                                travado: bloqueado || desconectado,
+                                aoAlternar: (bomba, ligar) => comandos.add(
+                                  AcionamentoSolicitado(bomba.id, ligar: ligar),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -265,62 +209,22 @@ String _hora(DateTime d) =>
     '${d.minute.toString().padLeft(2, '0')}:'
     '${d.second.toString().padLeft(2, '0')}';
 
-/// Foto do pomar desfocada, com véu da cor de fundo por cima.
-///
-/// O desfoque envolve só a imagem, nunca o conteúdo: assim ele é calculado uma
-/// vez, quando a imagem é desenhada, e não a cada quadro da rolagem. Os cartões
-/// continuam opacos, com a cor de superfície, então o contraste dos números não
-/// depende em nada do que está atrás.
 class _FundoDoPomar extends StatelessWidget {
   const _FundoDoPomar();
 
   @override
   Widget build(BuildContext context) => Positioned.fill(
-        child: IgnorePointer(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              ImageFiltered(
-                imageFilter: ImageFilter.blur(
-                  sigmaX: _desfoqueDoFundo,
-                  sigmaY: _desfoqueDoFundo,
-                  // Sem isto o desfoque puxa transparência das bordas e a
-                  // moldura da tela clareia.
-                  tileMode: TileMode.clamp,
-                ),
-                child: Image.asset(
-                  'assets/imagens/pomar.jpg',
-                  fit: BoxFit.cover,
-                ),
-              ),
-              ColoredBox(
-                color: Cores.fundo.withValues(alpha: _opacidadeDoVeu),
-              ),
-            ],
+    child: IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/imagens/fundo-irrigacao.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
           ),
-        ),
-      );
-}
-
-class _Ambiente extends StatelessWidget {
-  const _Ambiente({required this.cor, required this.opacidade});
-
-  final Color cor;
-  final double opacidade;
-
-  @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 600),
-      decoration: BoxDecoration(
-        gradient: RadialGradient(
-          center: const Alignment(0, -0.8),
-          radius: 1.2,
-          colors: [
-            cor.withValues(alpha: opacidade),
-            cor.withValues(alpha: 0),
-          ],
-        ),
+          ColoredBox(color: Cores.fundo.withValues(alpha: _opacidadeDoVeu)),
+        ],
       ),
     ),
   );
@@ -355,13 +259,22 @@ class _Topo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Único lugar do aplicativo com a Matcha Home. Ela é display, então pede
-    // corpo maior que o texto de interface para ler no mesmo peso.
-    final titulo = Text(
-      'BioSolar Citrus',
-      style: Fontes.nomeDoAplicativo(celular ? 26 : 25),
+    final tamanhoTitulo = celular ? 26.0 : 25.0;
+    final titulo = Text.rich(
+      TextSpan(
+        style: Fontes.nomeDoAplicativo(tamanhoTitulo),
+        children: [
+          const TextSpan(text: 'Bi'),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: _LaranjaDaMarca(tamanho: tamanhoTitulo),
+          ),
+          const TextSpan(text: 'Solar Citrus'),
+        ],
+      ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+      semanticsLabel: 'BioSolar Citrus',
     );
 
     final acoes = <Widget>[
@@ -432,6 +345,26 @@ class _Topo extends StatelessWidget {
       },
     );
   }
+}
+
+class _LaranjaDaMarca extends StatelessWidget {
+  const _LaranjaDaMarca({required this.tamanho});
+
+  final double tamanho;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: tamanho * 1.12,
+    height: tamanho * 1.46,
+    child: Transform.translate(
+      offset: Offset(0, -tamanho * 0.18),
+      child: Image.asset(
+        'assets/imagens/marca-laranja.png',
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.high,
+      ),
+    ),
+  );
 }
 
 class _Acao extends StatelessWidget {
@@ -846,18 +779,13 @@ class _LinhaTalhao extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cor = Cores.da(talhao.faixa);
-    final critico = talhao.faixa == Faixa.vermelho;
 
     return Container(
       padding: EdgeInsets.all(celular ? Espaco.m : Espaco.g),
       decoration: BoxDecoration(
         color: Cores.superficie,
         borderRadius: BorderRadius.circular(Raio.card),
-        // Crítico ganha peso: borda na cor do estado, mais grossa.
-        border: Border.all(
-          color: critico ? cor : Cores.borda,
-          width: critico ? 2 : 1,
-        ),
+        border: Border.all(color: Cores.borda),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
