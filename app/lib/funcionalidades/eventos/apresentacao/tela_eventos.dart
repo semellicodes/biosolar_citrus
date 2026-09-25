@@ -8,12 +8,13 @@ import 'package:compartilhado/modelos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../nucleo/tema.dart';
 import 'eventos_bloc.dart';
 
-const _vermelho = Color(0xFFC62828);
-const _azul = Color(0xFF1565C0);
-const _amarelo = Color(0xFFF9A825);
-const _cinza = Color(0xFF616161);
+const _vermelho = Cores.vermelho;
+const _azul = Color(0xFF4EA8F5);
+const _amarelo = Cores.ambar;
+const _cinza = Cores.textoFraco;
 
 /// Cor e icone por tipo, para achar o bloqueio no meio da lista sem ler.
 ({Color cor, IconData icone}) _aparencia(TipoEvento tipo) => switch (tipo) {
@@ -51,13 +52,18 @@ class TelaEventos extends StatelessWidget {
     final bloc = context.read<EventosBloc>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Historico de decisoes')),
+      appBar: AppBar(
+        title: Text('Historico de decisoes',
+            style: Fontes.titulo(Cores.texto, tamanho: 18)),
+        iconTheme: const IconThemeData(color: Cores.textoFraco),
+      ),
       body: BlocBuilder<EventosBloc, EstadoHistorico>(
         builder: (context, estado) {
           final visiveis = estado.visiveis;
           return Column(children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: Espaco.m, vertical: Espaco.p),
               child: Row(children: [
                 for (final (rotulo, origem) in const [
                   ('Tudo', null),
@@ -65,22 +71,32 @@ class TelaEventos extends StatelessWidget {
                   ('Operador', Origem.operador),
                 ])
                   Padding(
-                    padding: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.only(right: Espaco.p),
                     child: ChoiceChip(
-                      label: Text(rotulo),
+                      label: Text(rotulo,
+                          style: Fontes.corpo(
+                              estado.filtro == origem
+                                  ? Cores.fundo
+                                  : Cores.texto,
+                              tamanho: 12)),
                       selected: estado.filtro == origem,
+                      selectedColor: Cores.verde,
+                      backgroundColor: Cores.superficie,
+                      side: const BorderSide(color: Cores.borda),
+                      showCheckmark: false,
                       onSelected: (_) => bloc.add(FiltroAlterado(origem)),
                     ),
                   ),
                 const Spacer(),
-                Text('${visiveis.length}',
-                    style: const TextStyle(color: _cinza)),
+                Text('${visiveis.length}', style: Fontes.rotulo(_cinza)),
               ]),
             ),
             const Divider(height: 1),
             Expanded(
               child: visiveis.isEmpty
-                  ? const Center(child: Text('Nenhuma decisao registrada ainda.'))
+                  ? Center(
+                      child: Text('Nenhuma decisao registrada ainda.',
+                          style: Fontes.corpo(_cinza)))
                   // Construcao sob demanda: a lista cresce durante a sessao.
                   : ListView.separated(
                       itemCount: visiveis.length,
@@ -121,29 +137,31 @@ class _Linha extends StatelessWidget {
         ]),
       ),
       title: Text(evento.descricao,
-          style: TextStyle(
-              fontWeight: doSistema ? FontWeight.bold : FontWeight.normal)),
-      subtitle: Text(evento.motivo, style: const TextStyle(fontSize: 12)),
+          style: doSistema
+              ? Fontes.titulo(Cores.texto, tamanho: 15)
+              : Fontes.corpo(Cores.texto, tamanho: 15)),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: Espaco.xs),
+        child: Text(evento.motivo, style: Fontes.corpo(_cinza, tamanho: 12)),
+      ),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text(_hora(evento.hora), style: const TextStyle(fontSize: 12)),
-          const SizedBox(height: 4),
+          Text(_hora(evento.hora), style: Fontes.corpo(_cinza, tamanho: 12)),
+          const SizedBox(height: Espaco.xs),
           // RN11: a origem e escrita, nao so sugerida pela cor (RNF04).
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color: doSistema ? aparencia.cor : Colors.transparent,
-              border: Border.all(color: doSistema ? aparencia.cor : _cinza),
-              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: doSistema ? aparencia.cor : Cores.borda),
+              borderRadius: BorderRadius.circular(Espaco.xs),
             ),
             child: Text(
               doSistema ? 'SISTEMA' : 'OPERADOR',
-              style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: doSistema ? Colors.white : _cinza),
+              style: Fontes.rotulo(doSistema ? Cores.fundo : _cinza)
+                  .copyWith(fontSize: 9),
             ),
           ),
         ],

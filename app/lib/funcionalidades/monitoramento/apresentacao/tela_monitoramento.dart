@@ -1,34 +1,18 @@
 /// Painel de monitoramento. So desenha e envia comandos.
 ///
-/// Nenhuma decisao de automacao acontece aqui: as cores vem da faixa calculada
-/// no servidor e a recusa de comando vem da mensagem que o servidor devolveu.
+/// Nenhuma decisao de automacao acontece aqui: as faixas de alerta vem
+/// calculadas do servidor e a recusa de comando vem com a mensagem que o
+/// servidor devolveu.
 library;
 
 import 'package:compartilhado/modelos.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../nucleo/tema.dart';
 import '../../eventos/apresentacao/tela_eventos.dart';
 import 'comando_bloc.dart';
 import 'telemetria_bloc.dart';
-
-const _cores = {
-  Faixa.verde: Color(0xFF2E7D32),
-  Faixa.amarelo: Color(0xFFF9A825),
-  Faixa.vermelho: Color(0xFFC62828),
-};
-
-/// RNF04: o estado critico precisa ser identificavel sem depender so da cor.
-String _horaDe(DateTime instante) =>
-    '${instante.hour.toString().padLeft(2, '0')}:'
-    '${instante.minute.toString().padLeft(2, '0')}:'
-    '${instante.second.toString().padLeft(2, '0')}';
-
-const _rotulos = {
-  Faixa.verde: 'Normal',
-  Faixa.amarelo: 'Atencao',
-  Faixa.vermelho: 'Critico',
-};
 
 class TelaMonitoramento extends StatelessWidget {
   const TelaMonitoramento({super.key});
@@ -37,8 +21,6 @@ class TelaMonitoramento extends StatelessWidget {
   Widget build(BuildContext context) {
     final telemetriaBloc = context.read<TelemetriaBloc>();
 
-    // A recusa e a falha viram aviso na tela; a telemetria que volta de um
-    // comando aceito e empurrada para o painel sem esperar a proxima consulta.
     return BlocListener<ComandoBloc, EstadoComando>(
       listener: (context, estado) => switch (estado) {
         ComandoAceito(:final telemetria) =>
@@ -51,6 +33,8 @@ class TelaMonitoramento extends StatelessWidget {
         builder: (context, estado) => _Painel(
           telemetria: estado.ultima,
           desconectado: estado is TelemetriaDesconectada,
+          emTempoReal:
+              estado is TelemetriaCarregada && estado.emTempoReal,
         ),
       ),
     );
@@ -58,249 +42,499 @@ class TelaMonitoramento extends StatelessWidget {
 
   void _avisar(BuildContext context, String mensagem) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        backgroundColor: _cores[Faixa.vermelho],
-        content: Text(mensagem),
-        duration: const Duration(seconds: 5),
+        backgroundColor: Cores.vermelho,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(Espaco.m),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(Espaco.p)),
+        content: Text(mensagem,
+            style: Fontes.corpo(Colors.white).copyWith(height: 1.3)),
+        duration: const Duration(seconds: 6),
       ));
 }
 
 class _Painel extends StatelessWidget {
-  const _Painel({required this.telemetria, required this.desconectado});
+  const _Painel({
+    required this.telemetria,
+    required this.desconectado,
+    required this.emTempoReal,
+  });
 
   final Telemetria? telemetria;
   final bool desconectado;
+  final bool emTempoReal;
 
   @override
   Widget build(BuildContext context) {
     final comandos = context.read<ComandoBloc>();
     final telemetria = this.telemetria;
+    final faixa = telemetria?.reservatorio.faixa ?? Faixa.verde;
+    final bloqueado = telemetria?.reservatorio.bloqueioAtivo ?? false;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('BioSolar Citrus'),
-        actions: [
-          IconButton(
-            tooltip: 'Historico de decisoes',
-            icon: const Icon(Icons.history),
-            onPressed: () =>
-                Navigator.of(context).pushNamed(TelaEventos.rota),
-          ),
-          IconButton(
-            tooltip: 'Modo demonstracao',
-            icon: const Icon(Icons.fast_forward),
-            onPressed: () =>
-                comandos.add(const VelocidadeSolicitada(acelerada: true)),
-          ),
-          IconButton(
-            tooltip: 'Reiniciar cenario',
-            icon: const Icon(Icons.restart_alt),
-            onPressed: () => comandos.add(const ReinicioSolicitado()),
-          ),
-        ],
-      ),
-      body: telemetria == null
-          ? Center(
-              child: desconectado
-                  ? const Text('Servidor inacessivel. Tentando de novo...')
-                  : const CircularProgressIndicator(),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (desconectado)
-                  // RNF05. Numero velho sem aviso e pior que tela vazia num
-                  // painel que a banca olha procurando tempo real, entao o
-                  // aviso diz de quando e a leitura e que ela nao anda mais.
-                  _Aviso(
-                    icone: Icons.cloud_off,
-                    texto: 'SEM CONTATO COM O SERVIDOR. Dados defasados, '
-                        'parados na leitura das '
-                        '${_horaDe(telemetria.hora)}. Reconectando...',
-                    cor: const Color(0xFF616161),
-                  ),
-                if (telemetria.reservatorio.bloqueioAtivo)
-                  // RF11: o bloqueio e sinalizado e os interruptores travam.
-                  _Aviso(
-                    icone: Icons.block,
-                    texto: 'BLOQUEIO DE EMERGENCIA. Reservatorio critico, '
-                        'nenhuma bomba pode ser acionada.',
-                    cor: _cores[Faixa.vermelho]!,
-                    // Passo 7 do roteiro de apresentacao: com os interruptores
-                    // travados nao da para provar que a recusa vem do servidor.
-                    // Este botao passa por cima da trava da interface e mostra
-                    // o 409 chegando do dominio.
-                    acao: 'Tentar mesmo assim',
-                    aoAgir: () => comandos.add(AcionamentoSolicitado(
-                        telemetria.bombas.first.id,
-                        ligar: true)),
-                  ),
-                _Indicador(
-                  titulo: 'Reservatorio',
-                  valor: telemetria.reservatorio.nivel,
-                  faixa: telemetria.reservatorio.faixa,
-                  // RN03: a captacao solar e o que repoe o reservatorio, e e
-                  // ela que permite a liberacao do bloqueio. Quando o sol some
-                  // a captacao para, e a tela precisa dizer isso com todas as
-                  // letras: a espera e consequencia fisica, nao travamento.
-                  rodape: telemetria.fatorSolarAtual == 0
-                      ? '${telemetria.horaSimulada.floor()}h  -  noite, '
-                          'captacao solar parada (0%)'
-                      : '${telemetria.horaSimulada.floor()}h  -  captacao '
-                          'solar ${(telemetria.fatorSolarAtual * 100).round()}%',
-                  icone: telemetria.fatorSolarAtual == 0
-                      ? Icons.nightlight_round
-                      : Icons.wb_sunny,
+      body: Stack(children: [
+        // A temperatura da tela inteira acompanha o estado do reservatorio.
+        // Gradiente radial no lugar de blur real: mesmo efeito, sem o custo de
+        // desfoque em cada quadro no Android.
+        _Brilho(cor: Cores.da(faixa)),
+        SafeArea(
+          child: telemetria == null
+              ? Center(
+                  child: desconectado
+                      ? Text('Sem contato com o servidor. Tentando de novo...',
+                          style: Fontes.corpo(Cores.textoFraco))
+                      : const CircularProgressIndicator(color: Cores.verde),
+                )
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                      Espaco.m, Espaco.p, Espaco.m, Espaco.xg),
+                  children: [
+                    _Cabecalho(
+                      desconectado: desconectado,
+                      emTempoReal: emTempoReal,
+                      aoAbrirHistorico: () =>
+                          Navigator.of(context).pushNamed(TelaEventos.rota),
+                      aoAcelerar: () => comandos
+                          .add(const VelocidadeSolicitada(acelerada: true)),
+                      aoNormalizar: () => comandos
+                          .add(const VelocidadeSolicitada(acelerada: false)),
+                      aoReiniciar: () =>
+                          comandos.add(const ReinicioSolicitado()),
+                    ),
+                    const SizedBox(height: Espaco.m),
+                    if (desconectado)
+                      _Faixa(
+                        icone: Icons.cloud_off_outlined,
+                        cor: Cores.textoFraco,
+                        titulo: 'SEM CONTATO COM O SERVIDOR',
+                        texto: 'Dados defasados, parados na leitura das '
+                            '${_hora(telemetria.hora)}. Reconectando.',
+                      ),
+                    if (bloqueado)
+                      _Faixa(
+                        icone: Icons.block_outlined,
+                        cor: Cores.vermelho,
+                        titulo: 'BLOQUEIO DE EMERGENCIA',
+                        texto: 'Reservatorio critico. Nenhuma bomba pode ser '
+                            'acionada.',
+                        acao: 'Tentar mesmo assim',
+                        aoAgir: () => comandos.add(AcionamentoSolicitado(
+                            telemetria.bombas.first.id,
+                            ligar: true)),
+                      ),
+                    _CartaoReservatorio(telemetria: telemetria),
+                    const SizedBox(height: Espaco.g),
+                    Padding(
+                      padding: const EdgeInsets.only(
+                          left: Espaco.xs, bottom: Espaco.p),
+                      child: Text('TALHOES',
+                          style: Fontes.rotulo(Cores.textoFraco)),
+                    ),
+                    for (final talhao in telemetria.talhoes) ...[
+                      _CartaoTalhao(
+                        talhao: talhao,
+                        bomba: telemetria.bombaDo(talhao.id),
+                        // RF11. O servidor recusa de qualquer jeito (RN08);
+                        // travar aqui e conveniencia, nao seguranca.
+                        travado: bloqueado || desconectado,
+                        aoAlternar: (bomba, ligar) => comandos
+                            .add(AcionamentoSolicitado(bomba.id, ligar: ligar)),
+                      ),
+                      const SizedBox(height: Espaco.p),
+                    ],
+                  ],
                 ),
-                const SizedBox(height: 8),
-                for (final talhao in telemetria.talhoes)
-                  _LinhaTalhao(
-                    talhao: talhao,
-                    bomba: telemetria.bombaDo(talhao.id),
-                    bloqueado:
-                        telemetria.reservatorio.bloqueioAtivo || desconectado,
-                    aoAlternar: (bomba, ligar) => comandos
-                        .add(AcionamentoSolicitado(bomba.id, ligar: ligar)),
-                  ),
-              ],
-            ),
+        ),
+      ]),
     );
   }
 }
 
-class _Aviso extends StatelessWidget {
-  const _Aviso({
-    required this.icone,
-    required this.texto,
-    required this.cor,
-    this.acao,
-    this.aoAgir,
-  });
+String _hora(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:'
+    '${d.minute.toString().padLeft(2, '0')}:'
+    '${d.second.toString().padLeft(2, '0')}';
 
-  final IconData icone;
-  final String texto;
+class _Brilho extends StatelessWidget {
+  const _Brilho({required this.cor});
+
   final Color cor;
-  final String? acao;
-  final VoidCallback? aoAgir;
 
   @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: cor,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(children: [
-          Icon(icone, color: Colors.white),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(texto,
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-          if (acao != null)
-            TextButton(
-              onPressed: aoAgir,
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-              child: Text(acao!),
+  Widget build(BuildContext context) => IgnorePointer(
+        child: Stack(children: [
+          for (final (alinhamento, escala) in const [
+            (Alignment(-0.9, -0.85), 0.9),
+            (Alignment(1.1, -0.35), 0.7),
+          ])
+            Align(
+              alignment: alinhamento,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 600),
+                width: MediaQuery.sizeOf(context).width * escala,
+                height: MediaQuery.sizeOf(context).width * escala,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(colors: [
+                    cor.withValues(alpha: 0.22),
+                    cor.withValues(alpha: 0),
+                  ]),
+                ),
+              ),
             ),
         ]),
       );
 }
 
-class _Indicador extends StatelessWidget {
-  const _Indicador(
-      {required this.titulo,
-      required this.valor,
-      required this.faixa,
-      this.rodape,
-      this.icone});
+class _Cabecalho extends StatelessWidget {
+  const _Cabecalho({
+    required this.desconectado,
+    required this.emTempoReal,
+    required this.aoAbrirHistorico,
+    required this.aoAcelerar,
+    required this.aoNormalizar,
+    required this.aoReiniciar,
+  });
 
-  final String titulo;
-  final double valor;
-  final Faixa faixa;
-  final String? rodape;
-  final IconData? icone;
+  final bool desconectado;
+  final bool emTempoReal;
+  final VoidCallback aoAbrirHistorico;
+  final VoidCallback aoAcelerar;
+  final VoidCallback aoNormalizar;
+  final VoidCallback aoReiniciar;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: ListTile(
-          title: Text(titulo),
-          subtitle: Column(
+  Widget build(BuildContext context) => Row(children: [
+        Expanded(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
             children: [
-              LinearProgressIndicator(
-                value: valor / 100,
-                color: _cores[faixa],
-                backgroundColor: Colors.black12,
-              ),
-              if (rodape != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(children: [
-                    if (icone != null) ...[
-                      Icon(icone, size: 14, color: Colors.black54),
-                      const SizedBox(width: 6),
-                    ],
-                    Text(rodape!,
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.black54)),
-                  ]),
-                ),
-            ],
-          ),
-          trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('${valor.toStringAsFixed(1)}%',
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: _cores[faixa])),
-              Text(_rotulos[faixa]!,
-                  style: TextStyle(fontSize: 12, color: _cores[faixa])),
+              Text('BioSolar Citrus',
+                  style: Fontes.titulo(Cores.texto, tamanho: 20)),
+              const SizedBox(height: Espaco.xs),
+              _Conexao(desconectado: desconectado, emTempoReal: emTempoReal),
             ],
           ),
         ),
+        _Botao(Icons.history_outlined, 'Historico', aoAbrirHistorico),
+        _Botao(Icons.fast_forward_outlined, 'Modo demonstracao', aoAcelerar),
+        _Botao(Icons.slow_motion_video_outlined, 'Velocidade normal',
+            aoNormalizar),
+        _Botao(Icons.restart_alt_outlined, 'Reiniciar cenario', aoReiniciar),
+      ]);
+}
+
+class _Botao extends StatelessWidget {
+  const _Botao(this.icone, this.dica, this.aoTocar);
+
+  final IconData icone;
+  final String dica;
+  final VoidCallback aoTocar;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        tooltip: dica,
+        onPressed: aoTocar,
+        icon: Icon(icone, size: 20, color: Cores.textoFraco),
+        visualDensity: VisualDensity.compact,
       );
 }
 
-class _LinhaTalhao extends StatelessWidget {
-  const _LinhaTalhao({
+/// Ponto que pulsa devagar enquanto o canal esta de pe. Ele nao mente: quando
+/// quem entrega as leituras e a consulta de reserva, o rotulo muda.
+class _Conexao extends StatefulWidget {
+  const _Conexao({required this.desconectado, required this.emTempoReal});
+
+  final bool desconectado;
+  final bool emTempoReal;
+
+  @override
+  State<_Conexao> createState() => _ConexaoState();
+}
+
+class _ConexaoState extends State<_Conexao>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulso = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _pulso.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (cor, rotulo) = switch ((widget.desconectado, widget.emTempoReal)) {
+      (true, _) => (Cores.vermelho, 'SEM CONTATO'),
+      (false, true) => (Cores.verde, 'AO VIVO'),
+      (false, false) => (Cores.ambar, 'CONSULTA DE RESERVA'),
+    };
+
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      FadeTransition(
+        opacity: widget.desconectado
+            ? const AlwaysStoppedAnimation(1.0)
+            : Tween<double>(begin: 0.3, end: 1).animate(_pulso),
+        child: Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
+        ),
+      ),
+      const SizedBox(width: Espaco.p),
+      Text(rotulo, style: Fontes.rotulo(cor)),
+    ]);
+  }
+}
+
+class _Faixa extends StatelessWidget {
+  const _Faixa({
+    required this.icone,
+    required this.cor,
+    required this.titulo,
+    required this.texto,
+    this.acao,
+    this.aoAgir,
+  });
+
+  final IconData icone;
+  final Color cor;
+  final String titulo;
+  final String texto;
+  final String? acao;
+  final VoidCallback? aoAgir;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(bottom: Espaco.m),
+        padding: const EdgeInsets.all(Espaco.m),
+        decoration: BoxDecoration(
+          color: cor.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(Espaco.m),
+          border: Border.all(color: cor.withValues(alpha: 0.45)),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icone, color: cor, size: 20),
+          const SizedBox(width: Espaco.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(titulo, style: Fontes.rotulo(cor)),
+                const SizedBox(height: Espaco.xs),
+                Text(texto, style: Fontes.corpo(Cores.texto)),
+              ],
+            ),
+          ),
+          if (acao != null) ...[
+            const SizedBox(width: Espaco.p),
+            TextButton(
+              onPressed: aoAgir,
+              style: TextButton.styleFrom(
+                foregroundColor: cor,
+                padding: const EdgeInsets.symmetric(horizontal: Espaco.m),
+              ),
+              child: Text(acao!,
+                  style: Fontes.titulo(cor, tamanho: 13)),
+            ),
+          ],
+        ]),
+      );
+}
+
+class _CartaoReservatorio extends StatelessWidget {
+  const _CartaoReservatorio({required this.telemetria});
+
+  final Telemetria telemetria;
+
+  @override
+  Widget build(BuildContext context) {
+    final reservatorio = telemetria.reservatorio;
+    final cor = Cores.da(reservatorio.faixa);
+
+    return Cartao(
+      preenchimento: const EdgeInsets.all(Espaco.g),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: Text('RESERVATORIO',
+                style: Fontes.rotulo(Cores.textoFraco))),
+            Text(rotulos[reservatorio.faixa]!, style: Fontes.rotulo(cor)),
+          ],
+        ),
+        const SizedBox(height: Espaco.p),
+        ValorAnimado(valor: reservatorio.nivel, cor: cor, tamanho: 64),
+        const SizedBox(height: Espaco.m),
+        BarraNivel(fracao: reservatorio.nivel / 100, cor: cor, altura: 8),
+        const SizedBox(height: Espaco.g),
+        _ArcoSolar(telemetria: telemetria),
+      ]),
+    );
+  }
+}
+
+/// Posicao do sol no dia da fazenda simulada. RN12: e esta curva que repoe o
+/// reservatorio, e e o unico motivo de o bloqueio conseguir ser liberado.
+class _ArcoSolar extends StatelessWidget {
+  const _ArcoSolar({required this.telemetria});
+
+  final Telemetria telemetria;
+
+  @override
+  Widget build(BuildContext context) {
+    final fator = telemetria.fatorSolarAtual;
+    final noite = fator == 0;
+
+    return Row(children: [
+      Icon(noite ? Icons.nightlight_outlined : Icons.wb_sunny_outlined,
+          size: 16, color: noite ? Cores.textoFraco : Cores.ambar),
+      const SizedBox(width: Espaco.p),
+      Text('${telemetria.horaSimulada.floor().toString().padLeft(2, '0')}h',
+          style: Fontes.corpo(Cores.texto)),
+      const SizedBox(width: Espaco.m),
+      Expanded(
+        child: SizedBox(
+          height: 30,
+          child: CustomPaint(
+            painter: _PintorArco(
+                hora: telemetria.horaSimulada, ativo: !noite),
+            size: Size.infinite,
+          ),
+        ),
+      ),
+      const SizedBox(width: Espaco.m),
+      Text(
+        noite ? 'captacao parada' : 'captacao ${(fator * 100).round()}%',
+        style: Fontes.corpo(noite ? Cores.textoFraco : Cores.ambar),
+      ),
+    ]);
+  }
+}
+
+class _PintorArco extends CustomPainter {
+  const _PintorArco({required this.hora, required this.ativo});
+
+  final double hora;
+  final bool ativo;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final trilho = Paint()
+      // Um pouco acima da cor de borda, senao a curva some no fundo escuro.
+      ..color = ativo
+          ? Cores.ambar.withValues(alpha: 0.30)
+          : Cores.textoFraco.withValues(alpha: 0.30)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round;
+
+    // Meia elipse do amanhecer ao anoitecer.
+    final caminho = Path()
+      ..moveTo(0, size.height)
+      ..arcToPoint(Offset(size.width, size.height),
+          radius: Radius.elliptical(size.width / 2, size.height),
+          clockwise: true);
+    canvas.drawPath(caminho, trilho);
+
+    final progresso = ((hora - Limiares.amanhecer) /
+            (Limiares.anoitecer - Limiares.amanhecer))
+        .clamp(0.0, 1.0);
+    final angulo = 3.14159265 * progresso;
+    final centro = Offset(
+      size.width / 2 - (size.width / 2) * _cos(angulo),
+      size.height - size.height * _sin(angulo),
+    );
+
+    // Halo discreto para o sol nao sumir em cima da propria curva.
+    if (ativo) {
+      canvas.drawCircle(
+          centro, 9, Paint()..color = Cores.ambar.withValues(alpha: 0.25));
+    }
+    canvas.drawCircle(
+      centro,
+      4.5,
+      Paint()..color = ativo ? Cores.ambar : Cores.textoFraco,
+    );
+  }
+
+  static double _cos(double x) => _sin(x + 1.5707963);
+  static double _sin(double x) {
+    // Aproximacao de Bhaskara, suficiente para posicionar um ponto de 4 pixels
+    // e evitar importar dart:math so para isto.
+    while (x < 0) {
+      x += 6.2831853;
+    }
+    while (x > 6.2831853) {
+      x -= 6.2831853;
+    }
+    final negativo = x > 3.1415927;
+    if (negativo) x -= 3.1415927;
+    final valor = 16 * x * (3.1415927 - x) /
+        (5 * 3.1415927 * 3.1415927 - 4 * x * (3.1415927 - x));
+    return negativo ? -valor : valor;
+  }
+
+  @override
+  bool shouldRepaint(_PintorArco anterior) =>
+      anterior.hora != hora || anterior.ativo != ativo;
+}
+
+class _CartaoTalhao extends StatelessWidget {
+  const _CartaoTalhao({
     required this.talhao,
     required this.bomba,
-    required this.bloqueado,
+    required this.travado,
     required this.aoAlternar,
   });
 
   final Talhao talhao;
   final Bomba bomba;
-  final bool bloqueado;
+  final bool travado;
   final void Function(Bomba, bool) aoAlternar;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: ListTile(
-          title: Text('${talhao.nome} (${talhao.cultura})'),
-          subtitle: Text(
-            '${talhao.umidade.toStringAsFixed(1)}%  -  '
-            '${_rotulos[talhao.faixa]}'
-            '${bomba.ligada ? '  -  irrigando (${bomba.origemUltimoAcionamento?.name ?? ''})' : ''}',
-            style: TextStyle(color: _cores[talhao.faixa]),
-          ),
-          leading: CircleAvatar(
-            backgroundColor: _cores[talhao.faixa],
-            child: Text(talhao.umidade.toStringAsFixed(0),
-                style: const TextStyle(color: Colors.white, fontSize: 12)),
-          ),
-          trailing: Switch(
-            value: bomba.ligada,
-            // RF11. O servidor recusa de qualquer jeito (RN08), isto aqui e so
-            // conveniencia para o operador nao tentar em vao.
-            onChanged: bloqueado ? null : (ligar) => aoAlternar(bomba, ligar),
+  Widget build(BuildContext context) {
+    final cor = Cores.da(talhao.faixa);
+
+    return Cartao(
+      child: Row(children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(talhao.nome.toUpperCase(),
+                  style: Fontes.rotulo(Cores.textoFraco)),
+              const SizedBox(height: Espaco.p),
+              Row(crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic, children: [
+                ValorAnimado(valor: talhao.umidade, cor: cor, tamanho: 34),
+                const SizedBox(width: Espaco.p),
+                Text(rotulos[talhao.faixa]!, style: Fontes.rotulo(cor)),
+              ]),
+              const SizedBox(height: Espaco.p),
+              BarraNivel(fracao: talhao.umidade / 100, cor: cor),
+              const SizedBox(height: Espaco.p),
+              Text(
+                bomba.ligada
+                    ? 'Irrigando por ordem do '
+                        '${bomba.origemUltimoAcionamento == Origem.operador ? 'operador' : 'sistema'}'
+                    : talhao.cultura,
+                style: Fontes.corpo(
+                    bomba.ligada ? Cores.verde : Cores.textoFraco, tamanho: 12),
+              ),
+            ],
           ),
         ),
-      );
+        const SizedBox(width: Espaco.m),
+        Switch(
+          value: bomba.ligada,
+          activeThumbColor: Cores.verde,
+          onChanged: travado ? null : (ligar) => aoAlternar(bomba, ligar),
+        ),
+      ]),
+    );
+  }
 }

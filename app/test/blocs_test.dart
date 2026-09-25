@@ -23,6 +23,9 @@ class FonteFalsa implements FonteTelemetria {
   var conectou = false;
 
   @override
+  bool get emTempoReal => true;
+
+  @override
   Stream<Telemetria> get atualizacoes => controlador.stream;
 
   @override

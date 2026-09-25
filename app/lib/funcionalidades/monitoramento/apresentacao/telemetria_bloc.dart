@@ -43,8 +43,12 @@ class TelemetriaCarregando extends EstadoTelemetria {
 }
 
 class TelemetriaCarregada extends EstadoTelemetria {
-  const TelemetriaCarregada(this.telemetria);
+  const TelemetriaCarregada(this.telemetria, {this.emTempoReal = true});
   final Telemetria telemetria;
+
+  /// Diz se a leitura veio do canal ou da consulta de reserva. So o indicador
+  /// de conexao usa isso; o resto da tela nao precisa saber.
+  final bool emTempoReal;
 
   @override
   Telemetria get ultima => telemetria;
@@ -70,8 +74,9 @@ class TelemetriaBloc extends Bloc<EventoTelemetria, EstadoTelemetria> {
       _fonte.conectar();
     });
 
-    on<TelemetriaRecebida>(
-        (evento, emit) => emit(TelemetriaCarregada(evento.telemetria)));
+    on<TelemetriaRecebida>((evento, emit) => emit(TelemetriaCarregada(
+        evento.telemetria,
+        emTempoReal: _fonte.emTempoReal)));
 
     on<ContatoPerdido>((_, emit) => emit(TelemetriaDesconectada(state.ultima)));
   }

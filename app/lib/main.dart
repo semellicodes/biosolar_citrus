@@ -7,6 +7,7 @@ import 'funcionalidades/monitoramento/apresentacao/comando_bloc.dart';
 import 'funcionalidades/monitoramento/apresentacao/tela_monitoramento.dart';
 import 'funcionalidades/monitoramento/apresentacao/telemetria_bloc.dart';
 import 'nucleo/injecao.dart';
+import 'nucleo/tema.dart';
 
 void main() {
   registrarDependencias();
@@ -14,10 +15,7 @@ void main() {
   runApp(MaterialApp(
     title: 'BioSolar Citrus',
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      colorSchemeSeed: const Color(0xFF2E7D32),
-      useMaterial3: true,
-    ),
+    theme: construirTema(),
     initialRoute: '/',
     routes: {
       '/': (_) => MultiBlocProvider(

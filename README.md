@@ -46,14 +46,17 @@ flutter run --dart-define=SERVIDOR=http://192.168.0.10:8080
 
 ## Telas
 
-Painel em operacao normal, com as faixas de alerta por cor e por texto, e a
-captacao solar do momento sob o nivel do reservatorio:
+Painel em operacao normal. As faixas de alerta aparecem por cor e por texto, o
+arco mostra a posicao do sol no dia simulado e a captacao do momento, e o ponto
+ao lado do titulo diz se a telemetria esta chegando pelo canal em tempo real ou
+pela consulta de reserva:
 
 ![Painel em operacao normal](docs/painel-normal.png)
 
-Bloqueio de emergencia ativo. Os interruptores ficam travados e o botao
-"Tentar mesmo assim" existe para provar, na frente da banca, que a recusa vem
-do servidor e nao da interface:
+Bloqueio de emergencia ativo. A tela inteira muda de temperatura com o estado do
+reservatorio, os interruptores ficam travados e o botao "Tentar mesmo assim"
+existe para provar, na frente da banca, que a recusa vem do servidor e nao da
+interface:
 
 ![Painel com bloqueio de emergencia](docs/painel-bloqueio.png)
 

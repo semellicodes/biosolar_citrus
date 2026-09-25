@@ -17,6 +17,10 @@ abstract interface class FonteTelemetria {
   /// nunca fecha: o proprio canal cuida de voltar sozinho.
   Stream<Telemetria> get atualizacoes;
 
+  /// Verdadeiro enquanto o canal em tempo real esta de pe. Falso quando quem
+  /// esta entregando as leituras e a consulta de reserva.
+  bool get emTempoReal;
+
   void conectar();
   Future<void> encerrar();
 }

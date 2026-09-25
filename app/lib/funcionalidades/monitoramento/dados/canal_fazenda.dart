@@ -39,6 +39,9 @@ class CanalFazenda implements FonteTelemetria {
   Stream<Telemetria> get atualizacoes => _saida.stream;
 
   @override
+  bool get emTempoReal => _inscricaoCanal != null;
+
+  @override
   void conectar() {
     _encerrado = false;
     unawaited(_abrirCanal());
