@@ -4,13 +4,12 @@
 /// no servidor e a recusa de comando vem da mensagem que o servidor devolveu.
 library;
 
-import 'dart:async';
-
 import 'package:compartilhado/modelos.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../nucleo/falhas.dart';
-import '../dominio/contratos.dart';
+import 'comando_bloc.dart';
+import 'telemetria_bloc.dart';
 
 const _cores = {
   Faixa.verde: Color(0xFF2E7D32),
@@ -25,81 +24,50 @@ const _rotulos = {
   Faixa.vermelho: 'Critico',
 };
 
-class TelaMonitoramento extends StatefulWidget {
-  const TelaMonitoramento({
-    required this.leitor,
-    required this.emissor,
-    super.key,
-  });
-
-  final LeitorTelemetria leitor;
-  final EmissorComando emissor;
-
-  @override
-  State<TelaMonitoramento> createState() => _TelaMonitoramentoState();
-}
-
-class _TelaMonitoramentoState extends State<TelaMonitoramento> {
-  /// RNF03: a tela precisa refletir uma mudanca em menos de dois segundos.
-  /// O polling e a fase 3, o WebSocket entra na fase 4 e substitui isto.
-  static const Duration _intervaloConsulta = Duration(seconds: 2);
-
-  Timer? _consulta;
-
-  /// Cache de exibicao, apenas em memoria, para a tela nao piscar vazia entre
-  /// duas leituras. Nao e persistencia local de telemetria (RNF02).
-  Telemetria? _ultimaTelemetria;
-  bool _desconectado = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _atualizar();
-    _consulta = Timer.periodic(_intervaloConsulta, (_) => _atualizar());
-  }
-
-  @override
-  void dispose() {
-    _consulta?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _atualizar() async {
-    try {
-      final telemetria = await widget.leitor.obterTelemetria();
-      if (!mounted) return;
-      setState(() {
-        _ultimaTelemetria = telemetria;
-        _desconectado = false;
-      });
-    } on Falha {
-      // RNF05: a queda da conexao nao trava o aplicativo. O ultimo dado
-      // conhecido continua na tela e o proximo ciclo tenta de novo sozinho.
-      if (!mounted) return;
-      setState(() => _desconectado = true);
-    }
-  }
-
-  Future<void> _acionar(Bomba bomba, bool ligar) async {
-    try {
-      final telemetria =
-          await widget.emissor.acionarBomba(bomba.id, ligar: ligar);
-      if (!mounted) return;
-      setState(() => _ultimaTelemetria = telemetria);
-    } on Falha catch (falha) {
-      if (!mounted) return;
-      // A mensagem exibida e exatamente a que veio do servidor.
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        backgroundColor: _cores[Faixa.vermelho],
-        content: Text(falha.mensagem),
-        duration: const Duration(seconds: 5),
-      ));
-    }
-  }
+class TelaMonitoramento extends StatelessWidget {
+  const TelaMonitoramento({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final telemetria = _ultimaTelemetria;
+    final telemetriaBloc = context.read<TelemetriaBloc>();
+
+    // A recusa e a falha viram aviso na tela; a telemetria que volta de um
+    // comando aceito e empurrada para o painel sem esperar a proxima consulta.
+    return BlocListener<ComandoBloc, EstadoComando>(
+      listener: (context, estado) => switch (estado) {
+        ComandoAceito(:final telemetria) =>
+          telemetriaBloc.add(TelemetriaRecebida(telemetria)),
+        ComandoRecusado(:final mensagem) => _avisar(context, mensagem),
+        ComandoFalhou(:final mensagem) => _avisar(context, mensagem),
+        _ => null,
+      },
+      child: BlocBuilder<TelemetriaBloc, EstadoTelemetria>(
+        builder: (context, estado) => _Painel(
+          telemetria: estado.ultima,
+          desconectado: estado is TelemetriaDesconectada,
+        ),
+      ),
+    );
+  }
+
+  void _avisar(BuildContext context, String mensagem) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        backgroundColor: _cores[Faixa.vermelho],
+        content: Text(mensagem),
+        duration: const Duration(seconds: 5),
+      ));
+}
+
+class _Painel extends StatelessWidget {
+  const _Painel({required this.telemetria, required this.desconectado});
+
+  final Telemetria? telemetria;
+  final bool desconectado;
+
+  @override
+  Widget build(BuildContext context) {
+    final comandos = context.read<ComandoBloc>();
+    final telemetria = this.telemetria;
 
     return Scaffold(
       appBar: AppBar(
@@ -108,28 +76,26 @@ class _TelaMonitoramentoState extends State<TelaMonitoramento> {
           IconButton(
             tooltip: 'Modo demonstracao',
             icon: const Icon(Icons.fast_forward),
-            onPressed: () => widget.emissor.definirVelocidade(acelerada: true),
+            onPressed: () =>
+                comandos.add(const VelocidadeSolicitada(acelerada: true)),
           ),
           IconButton(
             tooltip: 'Reiniciar cenario',
             icon: const Icon(Icons.restart_alt),
-            onPressed: () async {
-              await widget.emissor.reiniciarSimulacao();
-              await _atualizar();
-            },
+            onPressed: () => comandos.add(const ReinicioSolicitado()),
           ),
         ],
       ),
       body: telemetria == null
           ? Center(
-              child: _desconectado
+              child: desconectado
                   ? const Text('Servidor inacessivel. Tentando de novo...')
                   : const CircularProgressIndicator(),
             )
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                if (_desconectado)
+                if (desconectado)
                   const _Aviso(
                     icone: Icons.cloud_off,
                     texto: 'Desconectado. Exibindo a ultima leitura conhecida.',
@@ -147,7 +113,9 @@ class _TelaMonitoramentoState extends State<TelaMonitoramento> {
                     // Este botao passa por cima da trava da interface e mostra
                     // o 409 chegando do dominio.
                     acao: 'Tentar mesmo assim',
-                    aoAgir: () => _acionar(telemetria.bombas.first, true),
+                    aoAgir: () => comandos.add(AcionamentoSolicitado(
+                        telemetria.bombas.first.id,
+                        ligar: true)),
                   ),
                 _Indicador(
                   titulo: 'Reservatorio',
@@ -172,7 +140,8 @@ class _TelaMonitoramentoState extends State<TelaMonitoramento> {
                     talhao: talhao,
                     bomba: telemetria.bombaDo(talhao.id),
                     bloqueado: telemetria.reservatorio.bloqueioAtivo,
-                    aoAlternar: _acionar,
+                    aoAlternar: (bomba, ligar) => comandos
+                        .add(AcionamentoSolicitado(bomba.id, ligar: ligar)),
                   ),
               ],
             ),
@@ -291,7 +260,7 @@ class _LinhaTalhao extends StatelessWidget {
   final Talhao talhao;
   final Bomba bomba;
   final bool bloqueado;
-  final Future<void> Function(Bomba, bool) aoAlternar;
+  final void Function(Bomba, bool) aoAlternar;
 
   @override
   Widget build(BuildContext context) => Card(
