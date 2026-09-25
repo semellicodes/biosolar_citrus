@@ -58,3 +58,17 @@ O sistema nao desliga uma bomba que o operador ligou, nem quando a umidade ja
 passou do patamar de seguranca. Ele registra um alerta de desperdicio no
 historico e deixa a decisao com quem a tomou. So o bloqueio de emergencia
 derruba bomba de operador, que e o que o caderno chama de irrestrito.
+
+## Limitacao conhecida
+
+Hoje o sistema trata todos os talhoes com igualdade. Quando o bloqueio e
+liberado, todos os talhoes que estiverem abaixo do gatilho critico sao irrigados
+ao mesmo tempo, o que consome o reservatorio rapido e pode leva-lo de volta ao
+bloqueio em poucos ciclos.
+
+E um comportamento correto diante das regras escritas, mas nao e o ideal em
+escassez. O proximo passo natural e uma regra de priorizacao por criticidade:
+abaixo de um patamar de conforto do reservatorio, irrigar apenas o talhao mais
+seco por vez, em vez de todos juntos. A regra entraria como mais uma funcao no
+mesmo modulo de regras, avaliada antes da irrigacao critica, sem tocar em
+transporte nem em interface.

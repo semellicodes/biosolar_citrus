@@ -163,28 +163,20 @@ Decisao avaliarIrrigacaoCritica(Telemetria estado, DateTime agora) {
     // RN05: o sistema alerta sobre desperdicio mas nao tira a decisao do
     // operador. A bomba que ele ligou continua ligada, so o bloqueio a derruba.
     //
-    // O aviso sai uma vez, no ciclo em que a umidade cruza o patamar, e outra
-    // ao saturar em 100%. Sao dois testes de cruzamento, sem guardar estado.
+    // O aviso sai uma unica vez, no ciclo em que a umidade cruza o patamar.
+    // E um teste de cruzamento puro, sem guardar estado: como a bomba esta
+    // ligada, a umidade so sobe, entao o patamar e atravessado uma vez so.
+    //
+    // O teto de 100 nao serve como segundo gatilho: la a umidade para de
+    // crescer e o mesmo teste passaria a valer em todos os ciclos seguintes. O
+    // caso do operador que liga uma bomba em solo ja encharcado e avisado no
+    // proprio comando, em avaliarComandoManual.
     if (bomba.ligada && bomba.origemUltimoAcionamento == Origem.operador) {
-      final cruzouPatamar =
-          talhao.umidade >= Limiares.umidadeSegura &&
-              talhao.umidade - Limiares.ganhoUmidadePorTick <
-                  Limiares.umidadeSegura;
-      final saturou = talhao.umidade >= 100 &&
-          talhao.umidade - Limiares.ganhoUmidadePorTick < 100;
-      if (cruzouPatamar || saturou) {
-        eventos.add(Evento(
-          hora: agora,
-          tipo: TipoEvento.alertaDesperdicio,
-          origem: Origem.sistema,
-          descricao: 'Desperdicio em ${talhao.nome}',
-          motivo: saturou
-              ? 'Solo saturado em 100% e a irrigacao manual continua ligada'
-              : 'Umidade em ${talhao.umidade.toStringAsFixed(1)}% ja passou do '
-                  'patamar de seguranca de '
-                  '${Limiares.umidadeSegura.toStringAsFixed(0)}% e a irrigacao '
-                  'manual continua ligada',
-        ));
+      if (talhao.umidade >= Limiares.umidadeSegura &&
+          talhao.umidade - Limiares.ganhoUmidadePorTick <
+              Limiares.umidadeSegura) {
+        eventos.add(_alertaDesperdicio(talhao, agora,
+            'e a irrigacao manual continua ligada'));
       }
       bombas.add(bomba);
       continue;
@@ -211,6 +203,17 @@ Decisao avaliarIrrigacaoCritica(Telemetria estado, DateTime agora) {
 
   return Decisao(estado.copiarCom(bombas: bombas), eventos);
 }
+
+Evento _alertaDesperdicio(Talhao talhao, DateTime agora, String complemento) =>
+    Evento(
+      hora: agora,
+      tipo: TipoEvento.alertaDesperdicio,
+      origem: Origem.sistema,
+      descricao: 'Desperdicio em ${talhao.nome}',
+      motivo: 'Umidade em ${talhao.umidade.toStringAsFixed(1)}% ja passou do '
+          'patamar de seguranca de '
+          '${Limiares.umidadeSegura.toStringAsFixed(0)}% $complemento',
+    );
 
 /// Um ciclo completo da simulacao, na ordem obrigatoria do capitulo 2.
 ///
@@ -257,6 +260,29 @@ Decisao avaliarComandoManual(
     );
   }
 
+  final eventos = [
+    Evento(
+      hora: agora,
+      tipo: TipoEvento.comandoAceito,
+      origem: Origem.operador,
+      descricao: 'Bomba $bombaId ${ligar ? 'ligada' : 'desligada'} manualmente',
+      motivo: 'Comando do operador',
+    )
+  ];
+
+  // RN05: ligar uma bomba em solo que ja passou do patamar de seguranca e
+  // desperdicio desde o primeiro ciclo. O sistema avisa aqui, uma vez, e nao
+  // impede nada.
+  if (ligar) {
+    final bomba = estado.bombas.where((b) => b.id == bombaId).firstOrNull;
+    final talhao =
+        estado.talhoes.where((t) => t.id == bomba?.talhaoId).firstOrNull;
+    if (talhao != null && talhao.umidade >= Limiares.umidadeSegura) {
+      eventos.add(_alertaDesperdicio(
+          talhao, agora, 'e o operador ligou a irrigacao mesmo assim'));
+    }
+  }
+
   return Decisao(
     estado.copiarCom(bombas: [
       for (final bomba in estado.bombas)
@@ -265,15 +291,6 @@ Decisao avaliarComandoManual(
                 ligada: ligar, origemUltimoAcionamento: Origem.operador)
             : bomba,
     ]),
-    [
-      Evento(
-        hora: agora,
-        tipo: TipoEvento.comandoAceito,
-        origem: Origem.operador,
-        descricao: 'Bomba $bombaId ${ligar ? 'ligada' : 'desligada'} '
-            'manualmente',
-        motivo: 'Comando do operador',
-      )
-    ],
+    eventos,
   );
 }

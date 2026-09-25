@@ -116,11 +116,37 @@ void main() {
         origem: Origem.operador);
     expect(avaliarIrrigacaoCritica(adiante, agora).eventos, isEmpty);
 
-    // Mas o solo saturado gera um segundo aviso.
-    final saturado =
-        fazenda(umidade: 100, ligada: true, origem: Origem.operador);
-    expect(avaliarIrrigacaoCritica(saturado, agora).eventos.single.motivo,
-        contains('saturado'));
+    // Ligar a bomba em solo que ja passou do patamar tambem avisa, uma vez, no
+    // proprio comando. Sem isso este caso nunca seria alertado, porque o
+    // cruzamento do patamar ja tinha acontecido antes de a bomba ligar.
+    final encharcado = fazenda(umidade: Limiares.umidadeSegura + 20);
+    final comando = avaliarComandoManual(encharcado, 'b1', true, agora);
+    expect(comando.aceito, isTrue);
+    expect(comando.telemetria.bombas.single.ligada, isTrue);
+    expect(
+        comando.eventos
+            .where((e) => e.tipo == TipoEvento.alertaDesperdicio)
+            .single
+            .motivo,
+        contains('mesmo assim'));
+
+    // O aviso nao se repete ao longo de uma sessao inteira, inclusive depois de
+    // o solo saturar em 100%, onde a umidade para de crescer e um teste de
+    // cruzamento ingenuo passaria a valer em todos os ciclos seguintes. No modo
+    // demonstracao sao muitos ciclos por segundo, entao isso se prova em vez de
+    // supor.
+    var estado = fazenda(umidade: 20, ligada: true, origem: Origem.operador);
+    final alertas = <Evento>[];
+    for (var ciclo = 0; ciclo < 200; ciclo++) {
+      estado = atualizarSensores(estado, agora);
+      final decisao = avaliarIrrigacaoCritica(estado, agora);
+      estado = decisao.telemetria;
+      alertas.addAll(decisao.eventos
+          .where((e) => e.tipo == TipoEvento.alertaDesperdicio));
+    }
+    expect(estado.talhoes.single.umidade, 100, reason: 'o solo saturou');
+    expect(alertas, hasLength(1),
+        reason: 'um unico aviso, no ciclo em que o patamar foi cruzado');
   });
 
   test('T04 RN04: irrigacao aciona sozinha ao cruzar o limite critico', () {
@@ -214,7 +240,10 @@ void main() {
 
   test('T10 RN11: todo evento identifica se a origem foi operador ou sistema',
       () {
-    final manual = avaliarComandoManual(fazenda(), 'b1', true, agora);
+    // Solo seco de proposito: aqui interessa so a origem do comando, sem o
+    // alerta de desperdicio entrando na conta.
+    final manual = avaliarComandoManual(fazenda(umidade: 20), 'b1', true, agora);
+    expect(manual.eventos.single.tipo, TipoEvento.comandoAceito);
     expect(manual.eventos.single.origem, Origem.operador);
 
     final automatico =

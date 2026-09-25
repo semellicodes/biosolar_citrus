@@ -154,9 +154,17 @@ class _TelaMonitoramentoState extends State<TelaMonitoramento> {
                   valor: telemetria.reservatorio.nivel,
                   faixa: telemetria.reservatorio.faixa,
                   // RN03: a captacao solar e o que repoe o reservatorio, e e
-                  // ela que permite a liberacao do bloqueio.
-                  rodape: '${telemetria.horaSimulada.floor()}h  -  captacao '
-                      'solar ${(telemetria.fatorSolarAtual * 100).round()}%',
+                  // ela que permite a liberacao do bloqueio. Quando o sol some
+                  // a captacao para, e a tela precisa dizer isso com todas as
+                  // letras: a espera e consequencia fisica, nao travamento.
+                  rodape: telemetria.fatorSolarAtual == 0
+                      ? '${telemetria.horaSimulada.floor()}h  -  noite, '
+                          'captacao solar parada (0%)'
+                      : '${telemetria.horaSimulada.floor()}h  -  captacao '
+                          'solar ${(telemetria.fatorSolarAtual * 100).round()}%',
+                  icone: telemetria.fatorSolarAtual == 0
+                      ? Icons.nightlight_round
+                      : Icons.wb_sunny,
                 ),
                 const SizedBox(height: 8),
                 for (final talhao in telemetria.talhoes)
@@ -218,12 +226,14 @@ class _Indicador extends StatelessWidget {
       {required this.titulo,
       required this.valor,
       required this.faixa,
-      this.rodape});
+      this.rodape,
+      this.icone});
 
   final String titulo;
   final double valor;
   final Faixa faixa;
   final String? rodape;
+  final IconData? icone;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -241,8 +251,15 @@ class _Indicador extends StatelessWidget {
               if (rodape != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text(rodape!,
-                      style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                  child: Row(children: [
+                    if (icone != null) ...[
+                      Icon(icone, size: 14, color: Colors.black54),
+                      const SizedBox(width: 6),
+                    ],
+                    Text(rodape!,
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.black54)),
+                  ]),
                 ),
             ],
           ),
